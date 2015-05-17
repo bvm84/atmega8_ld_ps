@@ -133,12 +133,15 @@
     <Compile Include="leds7.h">
       <SubType>compile</SubType>
     </Compile>
+<<<<<<< HEAD
     <Compile Include="pid.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="pid.h">
       <SubType>compile</SubType>
     </Compile>
+=======
+>>>>>>> ad94e848452d2c4bd2638face2acc4833fedea99
     <Compile Include="pt-sem.h">
       <SubType>compile</SubType>
     </Compile>
