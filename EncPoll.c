@@ -5,23 +5,16 @@
  *  Author: Вадим
  */ 
 #include "EncPoll.h"
-<<<<<<< HEAD
 
 uint16_t EncoderValue=0;
 uint8_t ButtonState=BUTTON_OFF;
 
 void inline button_change_state(void);
-=======
-#include "timer.h"
-
-//static uint16_t EncoderValue=0;
->>>>>>> ad94e848452d2c4bd2638face2acc4833fedea99
 
 const	int8_t	EncState[] PROGMEM =
 {
 	0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0
 };
-<<<<<<< HEAD
 
 void inline button_change_state(void)
 {
@@ -32,43 +25,27 @@ void inline button_change_state(void)
 PT_THREAD(EncoderScan(struct pt *pt))
 {
 	static	uint8_t	EncVal=0;
-=======
-PT_THREAD(EncoderScan(struct pt *pt))
-{
-	static	uint16_t	EncVal=0;
->>>>>>> ad94e848452d2c4bd2638face2acc4833fedea99
 	static	uint8_t	Enc=0;
 	static uint8_t enc_timer=0;
 	
 	PT_BEGIN(pt);
-<<<<<<< HEAD
 	PT_WAIT_UNTIL(pt, st_millis()-enc_timer>=2);
 	enc_timer=st_millis();
 	
 	Enc += ((PIN(ENCPOLL_PORT) & ((1<<ENCPOLL_A_PIN)|(1<<ENCPOLL_B_PIN)))>>3);
 	PT_WAIT_UNTIL(pt, st_millis()-enc_timer>=1);
 	EncVal += pgm_read_byte(&(EncState[Enc]));
-=======
-	PT_WAIT_UNTIL(pt, (st_millis()-enc_timer)>=1);
-	enc_timer=st_millis();
-	Enc += PIN(ENCPOLL_PORT) & ((1<<ENCPOLL_A_PIN)|(1<<ENCPOLL_B_PIN));
-	EncVal += (uint16_t)pgm_read_byte(&(EncState[Enc]));
->>>>>>> ad94e848452d2c4bd2638face2acc4833fedea99
 	Enc <<= 2;
 	Enc &= 0b00001111;
 	
 	//if (EncVal > 0xfe) EncVal = 0;
-<<<<<<< HEAD
 	if (EncVal < 1) EncVal = 1;
-=======
->>>>>>> ad94e848452d2c4bd2638face2acc4833fedea99
 	if (EncVal > 600) EncVal = 600; //600 = 6A current
 	
 	EncoderValue=EncVal;
 	
 	PT_END(pt);
 }
-<<<<<<< HEAD
 PT_THREAD(EncoderButton(struct pt *pt))
 {
 	static uint32_t but_timer=0;
@@ -106,8 +83,6 @@ PT_THREAD(EncoderButton(struct pt *pt))
  меняем состояние переменой кнопки
  
  */
-=======
->>>>>>> ad94e848452d2c4bd2638face2acc4833fedea99
 /*int8_t	EncPollDelta( void )
 {
 	static	uint8_t	Enc=0;

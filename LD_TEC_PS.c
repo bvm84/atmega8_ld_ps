@@ -8,7 +8,6 @@
 #include <avr/io.h>
 #include "display.h"
 #include <util/atomic.h>
-<<<<<<< HEAD
 #include <pt.h>
 #include "timer.h"
 #include "EncPoll.h"
@@ -41,31 +40,20 @@
 #define bauddivider (F_CPU/(16*baudrate)-1)
 #define HI(x) ((x)>>8)
 #define LO(x) ((x)& 0xFF)
-=======
-#include <pt-1.4/pt.h>
-#include "timer.h"
-#include "EncPoll.h"
-
-#define LCD_BUF_SIZE SCR_SIZE+1
->>>>>>> ad94e848452d2c4bd2638face2acc4833fedea99
 
 struct divmod10_t
 {
 	uint32_t quot;
 	uint8_t rem;
 };
-<<<<<<< HEAD
 static volatile uint8_t ADC_values[]={0,0,0,0}; //8 бит АЦП пока
 static volatile uint8_t ADC_counter=0;
 
 
-=======
->>>>>>> ad94e848452d2c4bd2638face2acc4833fedea99
 
 static struct pt SegDyn_pt; //указатель на структуру протопотока который выводит цифры на индикатор
 static struct pt EncoderScan_pt;
 static struct pt CurrentCalc_pt;
-<<<<<<< HEAD
 static struct pt EncoderButton_pt;
 static struct pt PID_LD_CURR_pt;
 
@@ -75,12 +63,6 @@ char * utoa_fast_div(uint32_t value, uint8_t *buffer);
 inline static struct divmod10_t divmodu10(uint32_t n);
 volatile uint8_t SCR_D[SCR_SIZE];
 static struct PID_DATA *pid_reg_st;
-=======
-
-char * utoa_fast_div(uint32_t value, char *buffer);
-inline static struct divmod10_t divmodu10(uint32_t n);
-volatile uint8_t SCR_D[SCR_SIZE];
->>>>>>> ad94e848452d2c4bd2638face2acc4833fedea99
 
 
 inline static struct divmod10_t divmodu10(uint32_t n)
@@ -106,21 +88,15 @@ inline static struct divmod10_t divmodu10(uint32_t n)
 	return res;
 }
 
-<<<<<<< HEAD
 char * utoa_fast_div(uint32_t value, uint8_t *buffer)
 {
 	
 	uint8_t i=0;
-=======
-char * utoa_fast_div(uint32_t value, char *buffer)
-{
->>>>>>> ad94e848452d2c4bd2638face2acc4833fedea99
 	buffer += LCD_BUF_SIZE;
 	*--buffer = 0;
 	do
 	{
 		struct divmod10_t res = divmodu10(value);
-<<<<<<< HEAD
 		*--buffer = res.rem;
 		//		*--buffer = res.rem + '0';
 		value = res.quot;
@@ -183,27 +159,6 @@ PT_THREAD(PID_PWM_LD_CURR(struct pt *pt))
 
 
 
-=======
-		*--buffer = res.rem + '0';
-		value = res.quot;
-	}
-	while (value != 0);
-	return buffer;
-}
-
-
-PT_THREAD(CurrentCalc(struct pt *pt))
-{
-/*	PT_BEGIN(pt);
-	static char *ptr;
-	ptr=(char *)&SCR_D[0];
-	ptr=utoa_fast_div((uint32_t)EncoderValue, ptr);
-	PT_END(pt);
-*/
-	SCR_D[0]=(uint8_t)EncoderValue;
-}
-
->>>>>>> ad94e848452d2c4bd2638face2acc4833fedea99
 /*
 усреднение АЦП -> суммируем 32 раза и сдвигаем на 5 (типа деление на 32).
 Скользящее: убираем послденее, сдвигаем все и записываем новое.
@@ -211,7 +166,6 @@ PT_THREAD(CurrentCalc(struct pt *pt))
 (математика, либо сдвиги, либо придумывать чнго)
 */
 
-<<<<<<< HEAD
 ISR(TIMER1_COMPA_vect)
 {
 	TCNT1H=0; //сброс таймера
@@ -250,18 +204,6 @@ int main(void)
 	PORTD=0;
 	PORTB=0b00111000;
 	PORTC=0;
-=======
-
-
-int main(void)
-{
-
-	//initiate ports
-	DDRD=255;
-	DDRB=0b11000011;
-	//DDRA='0b11010000';
-	PORTD=PORTB=0;
->>>>>>> ad94e848452d2c4bd2638face2acc4833fedea99
 /*
 to do: DDRB PIN6,PIN7 - ouputs (CA2,CA3)
 	   DDRB PIN0 - ouputs (dot)
@@ -274,7 +216,6 @@ to do: DDRB PIN6,PIN7 - ouputs (CA2,CA3)
 	// Set prescaler to 64
 	TCCR0 |= (_BV(CS01) | _BV(CS00));
 	// Enable interrupt
-<<<<<<< HEAD
 	TIMSK |= _BV(TOIE0) | _BV(OCIE1A);
 	// Set default value
 	TCNT0 = ST_CTC_HANDMADE; //1ms tiks on 8mhz CPU clock
@@ -326,28 +267,4 @@ to do: DDRB PIN6,PIN7 - ouputs (CA2,CA3)
 		else PORTB&=~1;
 		wdt_reset(); //переодически сбрасываем собаку чтобы не улетететь в ресет
 	 }
-=======
-	TIMSK |= _BV(TOIE0);
-	// Set default value
-	TCNT0 = ST_CTC_HANDMADE; //1ms tiks on 8mhz CPU clock
-		
-	PT_INIT(&SegDyn_pt);
-	PT_INIT(&EncoderScan_pt);
-	PT_INIT(&CurrentCalc_pt);
-	sei();
-
-    while(1)
-    {
-		SCR_D[0]=7;
-		SCR_D[1]=9;
-		SCR_D[2]=2;
-		
-		//EncoderScan(&EncoderScan_pt);
-		//CurrentCalc(&CurrentCalc_pt);
-		SegDyn(&SegDyn_pt);
-		EncoderScan(&EncoderScan_pt);
-		CurrentCalc(&CurrentCalc_pt);
-   }
-	
->>>>>>> ad94e848452d2c4bd2638face2acc4833fedea99
 }
