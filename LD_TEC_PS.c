@@ -12,11 +12,11 @@
 #include "timer.h"
 #include "EncPoll.h"
 #include "pid.h"
-#include <avr/delay.h>
+#include <util/delay.h>
 #include <avr/wdt.h>
 
 
-#define F_CPU 8000000
+//#define F_CPU 8000000 -defined in project symbols
 
 #define UART_OUT 1
 #ifndef UART_OUT
@@ -91,22 +91,22 @@ inline static struct divmod10_t divmodu10(uint32_t n)
 char * utoa_fast_div(uint32_t value, uint8_t *buffer)
 {
 	
-	uint8_t i=0;
-	buffer += LCD_BUF_SIZE;
-	*--buffer = 0;
+	//uint8_t i=0;
+	buffer += LCD_BUF_SIZE;//указывает на младший разряд +1
+	*--buffer = 0;//вычитаем из адреса 1 и кладем в младший разряд 0
 	do
 	{
 		struct divmod10_t res = divmodu10(value);
-		*--buffer = res.rem;
-		//		*--buffer = res.rem + '0';
+		//*--buffer = res.rem;
+		*--buffer = res.rem + '0';
 		value = res.quot;
-		i++;
+		//i++;
 	}
 	while (value != 0);
-	if (i==1) {*(buffer-3)=0; *(buffer-2)=0;}
-	else if (i==2) {*(buffer-2)=0;}
+	//if (i==1) {*(buffer-3)=0; *(buffer-2)=0;}
+	//else if (i==2) {*(buffer-2)=0;}
 	
-	return buffer; 
+	return (char *)buffer; 
 }
 
 /* функция инициализации АЦП и нахождения уровня шума, передумал делать, может в будущем пригодится
@@ -136,9 +136,9 @@ uint8_t ADC_init(void)
 PT_THREAD(CurrentCalc(struct pt *pt))
 {
 	PT_BEGIN(pt);
-	uint8_t *ptr;
-	ptr=&SCR_D[0];
-	ptr=utoa_fast_div((uint32_t)EncoderValue, ptr);
+	volatile uint8_t *ptr;
+	ptr=&SCR_D[0]; //берем указатель на слепок экрана
+	ptr=(volatile uint8_t *)utoa_fast_div((uint32_t)EncoderValue, (uint8_t *)ptr);
 	PT_END(pt);
 }
 
