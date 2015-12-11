@@ -14,6 +14,7 @@
 #include "pid.h"
 #include <util/delay.h>
 #include <avr/wdt.h>
+#include <avr/sleep.h>
 
 
 //#define F_CPU 8000000 -defined in project symbols
@@ -56,6 +57,7 @@ static struct pt EncoderScan_pt;
 static struct pt CurrentCalc_pt;
 static struct pt EncoderButton_pt;
 static struct pt PID_LD_CURR_pt;
+static struct pt ADC_LCD_pt;
 
 
 
@@ -97,8 +99,9 @@ char * utoa_fast_div(uint32_t value, uint8_t *buffer)
 	do
 	{
 		struct divmod10_t res = divmodu10(value);
-		//*--buffer = res.rem;
-		*--buffer = res.rem + '0';
+		*--buffer = res.rem;
+		//*buffer = res.rem + '0';
+		//buffer--;
 		value = res.quot;
 		//i++;
 	}
@@ -156,6 +159,37 @@ PT_THREAD(PID_PWM_LD_CURR(struct pt *pt))
 	PT_END(pt);
 		
 }
+PT_THREAD(ADC_LCD(struct pt *pt))
+{
+	static volatile uint8_t adc_lcd_timer=0, averaging=0;
+	static volatile uint32_t aver_value=0;
+	volatile uint8_t *ptr;
+	PT_BEGIN(pt);
+	PT_WAIT_UNTIL(pt,(st_millis()-adc_lcd_timer)>=10);
+	//MCUCR|=0b10000000;//ждем прерывание от АЦП в спячке
+	sleep_enable();
+	ADCSRA|=(_BV(7))|(_BV(6));//заупск преобразования АЦП
+	sleep_cpu();
+	sleep_disable();
+	
+	if (averaging<8) {
+		averaging++;
+		aver_value+=ADC_values[0];
+		}
+	else {
+		averaging=0;
+		aver_value>>3;//&&((st_millis()-adc_lcd_timer)>=1)
+	//adc_lcd_timer=st_millis();
+	//aver_value>>5;
+	ptr=&SCR_D[0];
+	ptr=(volatile uint8_t *)utoa_fast_div((uint32_t)aver_value, (uint8_t *)ptr);
+	aver_value=0;
+	}
+	adc_lcd_timer=st_millis();
+	//aver_value=0;
+	//averaging=0;
+	PT_END(pt);
+}
 
 
 
@@ -174,16 +208,16 @@ ISR(TIMER1_COMPA_vect)
 ISR(ADC_vect)
 {
 	ADC_values[ADC_counter]=ADCH;
-	ADMUX=0b11101111;
+	ADMUX|=0b00001111; //все каналы АЦП сажаем на землю, перобразование окончено
 	ADC_counter++;
 	if (ADC_counter<4) 
 	{
-		ADMUX=(ADMUX&(~15))|ADC_counter;
+		ADMUX=(ADMUX&(~15))|ADC_counter; //подключаем нужный канал
 	}
 	else
 	{
-		ADC_counter=0;
-		ADMUX=0b11100000;
+		ADC_counter=0; //сбрасываем счетчик
+		ADMUX=(ADMUX&(~15));//подключаем нулевой канал АЦП
 	}
 	ADCSRA|=(_BV(6)); //так рабоатет в режиме фри  ранинг моде херня со смещением данных с каналов в массиве
 }
@@ -197,7 +231,7 @@ int main(void)
 {
 	//uint8_t noise_level_value=0;
 	//initiate ports
-	DDRD=255; //all pins on pord are outputs
+	DDRD=255; //all pins on portd are outputs
 	DDRB=0b11000111;
 	DDRC=0b11110000;//ADC pins inputs
 	//DDRA='0b11010000';
@@ -221,19 +255,22 @@ to do: DDRB PIN6,PIN7 - ouputs (CA2,CA3)
 	TCNT0 = ST_CTC_HANDMADE; //1ms tiks on 8mhz CPU clock
 	
 	//set timer 1 for PWM
-	TCCR1A=0b01000000; //переключение oc1A по событие на таймере, oc1b льключен
-	TCCR1B=0b00000001; //clocked from CLK=8MHZ
+	//TCCR1A=0b01000000; //переключение oc1A по событие на таймере, oc1b льключен
+	//TCCR1B=0b00000001; //clocked from CLK=8MHZ
 	OCR1AH=0;
 	OCR1AL=255;
 	//инициализация АЦП
 	ADMUX=0b11100000; //опорное напряжение от внутреннего ИОН (2,56V), выравнивание по левому краю (читаем только ADCH), присоединить АЦП к входу ADC0;
-	ADCSRA=0b00011110; //частота преобразоания 62,5кГц, запустить АЦП, включить прерывания от АЦП
+	ADCSRA=0b00001111; //резрешить прерывание от АЦП, Установить делитель частоты 128
+	MCUCR|=0b00010000;//установить ADC_noise canceling mode
 	
+	/* //Если включить этот блок сломается индикация, не включать в текущей аппаратной реализации
 	UBRRL = LO(bauddivider); //грузим скокрость передачи 9600бод
 	UBRRH = HI(bauddivider);
 	UCSRA = 0; //обнуляем флаги приема передачи
 	UCSRB = 1<<RXEN|1<<TXEN|0<<RXCIE|0<<TXCIE; //разрешаем работы USART, подключаем приемопередатчик к ногам, пока запрещаем перрывания
 	UCSRC = 1<<URSEL|1<<UCSZ0|1<<UCSZ1;//передача 8 бит, стандартная (четность там, топ биты)
+	*/
 	
 	//noise_level_value=ADC_init();
 	//pid_Init(P_FACTOR,I_FACTOR,D_FACTOR, pid_reg_st);
@@ -241,26 +278,30 @@ to do: DDRB PIN6,PIN7 - ouputs (CA2,CA3)
 	PT_INIT(&SegDyn_pt);
 	PT_INIT(&EncoderButton_pt);
 	PT_INIT(&EncoderScan_pt);
-	PT_INIT(&CurrentCalc_pt);
-	PT_INIT(&PID_LD_CURR_pt);
+	PT_INIT(&ADC_LCD_pt);
+	//PT_INIT(&CurrentCalc_pt);
+	//PT_INIT(&PID_LD_CURR_pt);
 	
 	wdt_reset(); //сбрасываем собаку на всякий пожарный
 	wdt_enable(WDTO_2S); //запускаем собаку с перидом 2с
 	
 	sei();
-	ADCSRA|=(_BV(7))|(_BV(6)); //запускаем АЦП в одиночном режиме, перезапуск в обработчике прерывания
+	//ADCSRA|=(_BV(7))|(_BV(6)); //запускаем АЦП в одиночном режиме, перезапуск в обработчике прерывания
 	//ADCSRA|=(_BV(7));
 	//UDR = ADC_values[0];		// Отправляем байт
 	//UCSRB|=(1<<UDRIE);	// Разрешаем прерывание UDRE
+	SCR_D[0]=2;
+	SCR_D[1]=8;
+	SCR_D[2]=6;
 
     while(1)
     {
-		
-		EncoderScan(&EncoderScan_pt);
-		CurrentCalc(&CurrentCalc_pt);
+		//EncoderScan(&EncoderScan_pt);
+		//CurrentCalc(&CurrentCalc_pt);
 		SegDyn(&SegDyn_pt);
 		EncoderButton(&EncoderButton_pt);
-		PID_PWM_LD_CURR(&PID_LD_CURR_pt);
+		ADC_LCD(&ADC_LCD_pt);
+		//PID_PWM_LD_CURR(&PID_LD_CURR_pt);
 	
 		
 		if (ButtonState==BUTTON_ON) PORTB|=1; //включить dot

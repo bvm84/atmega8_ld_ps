@@ -9,18 +9,19 @@
 uint16_t EncoderValue=0;
 uint8_t ButtonState=BUTTON_OFF;
 
-void inline button_change_state(void);
+//void inline button_change_state(void);
 
 const	int8_t	EncState[] PROGMEM =
 {
 	0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0
 };
 
-void inline button_change_state(void)
+/*void inline button_change_state(void)
 {
 	if ((ButtonState==BUTTON_ON)||(ButtonState==BUTTON_LONG_ON)) ButtonState=BUTTON_OFF;
 	else ButtonState=BUTTON_ON;
 }
+*/
 
 PT_THREAD(EncoderScan(struct pt *pt))
 {
@@ -66,7 +67,7 @@ PT_THREAD(EncoderButton(struct pt *pt))
 		}
 		else if (val>=5)
 		{
-			button_change_state();
+			//button_change_state();
 		}
 		val=0;
 	}
