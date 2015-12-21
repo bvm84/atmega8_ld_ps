@@ -23,8 +23,9 @@
 #define PIN_(port)  PIN  ## port
 #define PIN(port)  PIN_(port)
 
-#define BUTTON_ON 1
-#define BUTTON_OFF 0
+#define BUTTON_ADC 0
+#define BUTTON_ENC 1
+#define BUTTON_PID 2
 #define BOUNCE 3
 #define BUTTON_LONG_ON 2
 #define BUT_MASK 16

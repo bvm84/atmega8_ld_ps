@@ -24,10 +24,10 @@
 #define UART_OUT 0
 #endif
 
-#define LCD_BUF_SIZE SCR_SIZE+1
-#define P_FACTOR 5
-#define I_FACTOR 3
-#define D_FACTOR 7
+//#define LCD_BUF_SIZE SCR_SIZE+1
+#define P_FACTOR 2
+#define I_FACTOR 0
+#define D_FACTOR 0
 
 #define B(bit_no)         (1 << (bit_no))
 #define CB(reg, bit_no)   (reg) &= ~B(bit_no)
@@ -41,6 +41,7 @@
 #define bauddivider (F_CPU/(16*baudrate)-1)
 #define HI(x) ((x)>>8)
 #define LO(x) ((x)& 0xFF)
+#define ABS(x) ((x) < 0 ? -(x) : (x))
 
 struct divmod10_t
 {
@@ -49,6 +50,8 @@ struct divmod10_t
 };
 static volatile uint8_t ADC_values[]={0,0,0,0}; //8 бит АЦП пока
 static volatile uint8_t ADC_counter=0;
+static volatile uint16_t ADC0_value=0;
+static volatile uint8_t PWM_value=0; 
 
 
 
@@ -56,8 +59,9 @@ static struct pt SegDyn_pt; //указатель на структуру про�
 static struct pt EncoderScan_pt;
 static struct pt CurrentCalc_pt;
 static struct pt EncoderButton_pt;
-static struct pt PID_LD_CURR_pt;
-static struct pt ADC_LCD_pt;
+static struct pt PidCurr_pt;
+static struct pt Adc_pt;
+static struct pt LcdSwitch_pt;
 
 
 
@@ -93,9 +97,14 @@ inline static struct divmod10_t divmodu10(uint32_t n)
 char * utoa_fast_div(uint32_t value, uint8_t *buffer)
 {
 	
-	//uint8_t i=0;
-	buffer += LCD_BUF_SIZE;//указывает на младший разряд +1
-	*--buffer = 0;//вычитаем из адреса 1 и кладем в младший разряд 0
+	uint8_t i=0;
+	for(i=0;i<SCR_SIZE;i++)
+	{
+		*buffer=0;
+		buffer++;
+	} //кладем нули во все места, чтобы корректно отображались еденицы и десятки
+	//buffer += LCD_BUF_SIZE;//указывает на младший разряд +1
+	//*--buffer = 0;//вычитаем из адреса 1 и кладем в младший разряд 0
 	do
 	{
 		struct divmod10_t res = divmodu10(value);
@@ -146,7 +155,7 @@ PT_THREAD(CurrentCalc(struct pt *pt))
 }
 
 
-PT_THREAD(PID_PWM_LD_CURR(struct pt *pt))
+PT_THREAD(PidCurr(struct pt *pt))
 {
 	static uint8_t pid_timer=0;
 	static volatile int16_t PWM_calc=0;
@@ -159,35 +168,50 @@ PT_THREAD(PID_PWM_LD_CURR(struct pt *pt))
 	PT_END(pt);
 		
 }
-PT_THREAD(ADC_LCD(struct pt *pt))
+PT_THREAD(Adc(struct pt *pt))
 {
 	static volatile uint8_t adc_lcd_timer=0, averaging=0;
-	static volatile uint32_t aver_value=0;
-	volatile uint8_t *ptr;
+	static volatile uint32_t aver_value=0; 
+	//volatile uint8_t *ptr;
 	PT_BEGIN(pt);
 	PT_WAIT_UNTIL(pt,(st_millis()-adc_lcd_timer)>=10);
-	//MCUCR|=0b10000000;//ждем прерывание от АЦП в спячке
 	sleep_enable();
 	ADCSRA|=(_BV(7))|(_BV(6));//заупск преобразования АЦП
 	sleep_cpu();
 	sleep_disable();
-	
-	if (averaging<8) {
+	if (averaging<32) {
 		averaging++;
 		aver_value+=ADC_values[0];
 		}
 	else {
 		averaging=0;
-		aver_value>>3;//&&((st_millis()-adc_lcd_timer)>=1)
-	//adc_lcd_timer=st_millis();
-	//aver_value>>5;
-	ptr=&SCR_D[0];
-	ptr=(volatile uint8_t *)utoa_fast_div((uint32_t)aver_value, (uint8_t *)ptr);
-	aver_value=0;
-	}
+		ADC0_value=aver_value>>5;//&&((st_millis()-adc_lcd_timer)>=1)
+		//ptr=&SCR_D[0];
+		//ptr=(volatile uint8_t *)utoa_fast_div((uint32_t)ADC0_value, (uint8_t *)ptr);
+		aver_value=0;
+		}
 	adc_lcd_timer=st_millis();
-	//aver_value=0;
-	//averaging=0;
+	PT_END(pt);
+}
+PT_THREAD(LcdSwitch(struct pt *pt))
+{
+	static volatile uint8_t lcd_switch_timer=0; 
+	char * ptr=0;
+	uint16_t pid_value=0;
+	PT_BEGIN(pt);
+	PT_WAIT_UNTIL(pt,(st_millis()-lcd_switch_timer)>=100);
+	ptr=&SCR_D[0];
+	pid_value=ABS(pid_Controller((int16_t)EncoderValue, (int16_t)ADC0_value, pid_reg_st));
+	if (ButtonState==BUTTON_ADC) ptr=(volatile uint8_t *)utoa_fast_div((uint32_t)ADC0_value, (uint8_t *)ptr); //включить dot
+	if (ButtonState==BUTTON_ENC) ptr=(volatile uint8_t *)utoa_fast_div((uint32_t)EncoderValue, (uint8_t *)ptr);
+	if (ButtonState==BUTTON_PID) ptr=(volatile uint8_t *)utoa_fast_div((uint32_t)pid_value, (uint8_t *)ptr);
+	pid_Reset_Integrator(pid_reg_st);
+	PWM_value=EncoderValue;
+	/*
+	Для корректной работы данной реализации ПИДа в режиме П или ПД необходимо сбрасывать накопительную ошибку
+	иначе ПИД со временем улетит в оверфлоу
+	*/
+	lcd_switch_timer=st_millis();
 	PT_END(pt);
 }
 
@@ -202,9 +226,15 @@ PT_THREAD(ADC_LCD(struct pt *pt))
 
 ISR(TIMER1_COMPA_vect)
 {
-	TCNT1H=0; //сброс таймера
-	TCNT1L=0;
+	/*cli();
+	OCR1AH=0;
+	OCR1AL=85;
+	//TCNT1H=0; //сброс таймера
+	//TCNT1L=0;
+	sei();
+	*/
 }
+ISR(TIM)
 ISR(ADC_vect)
 {
 	ADC_values[ADC_counter]=ADCH;
@@ -221,14 +251,17 @@ ISR(ADC_vect)
 	}
 	ADCSRA|=(_BV(6)); //так рабоатет в режиме фри  ранинг моде херня со смещением данных с каналов в массиве
 }
+/*
 ISR(USART_UDRE_vect)
 {
 	//UDR=ADC_values[0];
 	//UCSRB &=~(1<<UDRIE); //запрещаем прерывание от UART, передача щаа	
 }
+*/
 
 int main(void)
 {
+	//volatile uint8_t *ptr;
 	//uint8_t noise_level_value=0;
 	//initiate ports
 	DDRD=255; //all pins on portd are outputs
@@ -250,15 +283,18 @@ to do: DDRB PIN6,PIN7 - ouputs (CA2,CA3)
 	// Set prescaler to 64
 	TCCR0 |= (_BV(CS01) | _BV(CS00));
 	// Enable interrupt
-	TIMSK |= _BV(TOIE0) | _BV(OCIE1A);
+	//TIMSK |= _BV(TOIE0) | _BV(OCIE1A);
 	// Set default value
 	TCNT0 = ST_CTC_HANDMADE; //1ms tiks on 8mhz CPU clock
 	
 	//set timer 1 for PWM
-	//TCCR1A=0b01000000; //переключение oc1A по событие на таймере, oc1b льключен
-	//TCCR1B=0b00000001; //clocked from CLK=8MHZ
+	TCCR1A=0b10000001; //переключение oc1A по событие на таймере, oc1b льключен, WGM10=1, 8 бит таймер
+	TCCR1B=0b00001001; //clocked from CLK=8MHZ WGM12=1
 	OCR1AH=0;
-	OCR1AL=255;
+	OCR1AL=127;//50% ШИМ 
+	TCNT1=0;
+	TIMSK=0;
+	TIMSK |= _BV(TOIE0) | _BV(OCIE1A);
 	//инициализация АЦП
 	ADMUX=0b11100000; //опорное напряжение от внутреннего ИОН (2,56V), выравнивание по левому краю (читаем только ADCH), присоединить АЦП к входу ADC0;
 	ADCSRA=0b00001111; //резрешить прерывание от АЦП, Установить делитель частоты 128
@@ -273,12 +309,13 @@ to do: DDRB PIN6,PIN7 - ouputs (CA2,CA3)
 	*/
 	
 	//noise_level_value=ADC_init();
-	//pid_Init(P_FACTOR,I_FACTOR,D_FACTOR, pid_reg_st);
+	pid_Init(P_FACTOR,I_FACTOR,D_FACTOR, pid_reg_st);
 		
 	PT_INIT(&SegDyn_pt);
 	PT_INIT(&EncoderButton_pt);
 	PT_INIT(&EncoderScan_pt);
-	PT_INIT(&ADC_LCD_pt);
+	PT_INIT(&Adc_pt);
+	PT_INIT(&LcdSwitch_pt);
 	//PT_INIT(&CurrentCalc_pt);
 	//PT_INIT(&PID_LD_CURR_pt);
 	
@@ -290,22 +327,13 @@ to do: DDRB PIN6,PIN7 - ouputs (CA2,CA3)
 	//ADCSRA|=(_BV(7));
 	//UDR = ADC_values[0];		// Отправляем байт
 	//UCSRB|=(1<<UDRIE);	// Разрешаем прерывание UDRE
-	SCR_D[0]=2;
-	SCR_D[1]=8;
-	SCR_D[2]=6;
-
     while(1)
     {
-		//EncoderScan(&EncoderScan_pt);
-		//CurrentCalc(&CurrentCalc_pt);
 		SegDyn(&SegDyn_pt);
 		EncoderButton(&EncoderButton_pt);
-		ADC_LCD(&ADC_LCD_pt);
-		//PID_PWM_LD_CURR(&PID_LD_CURR_pt);
-	
-		
-		if (ButtonState==BUTTON_ON) PORTB|=1; //включить dot
-		else PORTB&=~1;
+		EncoderScan(&EncoderScan_pt);
+		Adc(&Adc_pt);
+		LcdSwitch(&LcdSwitch_pt);
 		wdt_reset(); //переодически сбрасываем собаку чтобы не улетететь в ресет
 	 }
 }

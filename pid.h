@@ -22,8 +22,8 @@
 
 #include "stdint.h"
 
-#define SCALING_FACTOR  128
-
+//#define SCALING_FACTOR  128
+#define SCALING_FACTOR  1
 /*! \brief PID Status
  *
  * Setpoints and data used by the PID control algorithm
