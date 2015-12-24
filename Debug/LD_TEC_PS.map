@@ -340,7 +340,7 @@ END GROUP
 .rela.plt
  *(.rela.plt)
 
-.text           0x00000000     0x12ae
+.text           0x00000000     0x12d4
  *(.vectors)
  .vectors       0x00000000       0x26 D:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.0.90/gcc/dev/atmega8/avr4/crtatmega8.o
                 0x00000000                __vector_default
@@ -415,7 +415,6 @@ END GROUP
                 0x00000076                __vector_4
                 0x00000076                __vector_2
                 0x00000076                __vector_15
-                0x00000076                __vector_8
                 0x00000076                __vector_10
                 0x00000076                __vector_16
                 0x00000076                __vector_18
@@ -435,68 +434,71 @@ END GROUP
  .text.utoa_fast_div
                 0x000006f0       0xe6 LD_TEC_PS.o
                 0x000006f0                utoa_fast_div
- .text.Adc      0x000007d6      0x156 LD_TEC_PS.o
+ .text.Adc      0x000007d6      0x130 LD_TEC_PS.o
                 0x000007d6                Adc
  .text.LcdSwitch
-                0x0000092c      0x1ae LD_TEC_PS.o
-                0x0000092c                LcdSwitch
+                0x00000906      0x1ae LD_TEC_PS.o
+                0x00000906                LcdSwitch
  .text.__vector_6
-                0x00000ada       0x24 LD_TEC_PS.o
-                0x00000ada                __vector_6
+                0x00000ab4       0x4c LD_TEC_PS.o
+                0x00000ab4                __vector_6
+ .text.__vector_8
+                0x00000b00       0x24 LD_TEC_PS.o
+                0x00000b00                __vector_8
  .text.__vector_14
-                0x00000afe       0xba LD_TEC_PS.o
-                0x00000afe                __vector_14
- .text.main     0x00000bb8      0x148 LD_TEC_PS.o
-                0x00000bb8                main
+                0x00000b24       0xba LD_TEC_PS.o
+                0x00000b24                __vector_14
+ .text.main     0x00000bde      0x148 LD_TEC_PS.o
+                0x00000bde                main
  .text.pid_Init
-                0x00000d00       0xd2 pid.o
-                0x00000d00                pid_Init
+                0x00000d26       0xd2 pid.o
+                0x00000d26                pid_Init
  .text.pid_Controller
-                0x00000dd2      0x292 pid.o
-                0x00000dd2                pid_Controller
+                0x00000df8      0x292 pid.o
+                0x00000df8                pid_Controller
  .text.pid_Reset_Integrator
-                0x00001064       0x26 pid.o
-                0x00001064                pid_Reset_Integrator
+                0x0000108a       0x26 pid.o
+                0x0000108a                pid_Reset_Integrator
  .text.__iCliRetVal
-                0x0000108a       0x12 timer.o
+                0x000010b0       0x12 timer.o
  .text.__iRestore
-                0x0000109c       0x28 timer.o
+                0x000010c2       0x28 timer.o
  .text.__vector_9
-                0x000010c4       0x70 timer.o
-                0x000010c4                __vector_9
+                0x000010ea       0x70 timer.o
+                0x000010ea                __vector_9
  .text.st_millis
-                0x00001134       0x62 timer.o
-                0x00001134                st_millis
+                0x0000115a       0x62 timer.o
+                0x0000115a                st_millis
  .text.libgcc.mul
-                0x00001196       0x1e d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_mulsi3.o)
-                0x00001196                __mulsi3
+                0x000011bc       0x1e d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_mulsi3.o)
+                0x000011bc                __mulsi3
  .text.libgcc.div
-                0x000011b4       0x26 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_divmodhi4.o)
-                0x000011b4                _div
-                0x000011b4                __divmodhi4
+                0x000011da       0x26 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_divmodhi4.o)
+                0x000011da                _div
+                0x000011da                __divmodhi4
  .text.libgcc.div
-                0x000011da       0x28 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_divmodsi4.o)
-                0x000011da                __divmodsi4
+                0x00001200       0x28 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_divmodsi4.o)
+                0x00001200                __divmodsi4
  .text.libgcc.div
-                0x00001202       0x10 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_negsi2.o)
-                0x00001202                __negsi2
+                0x00001228       0x10 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_negsi2.o)
+                0x00001228                __negsi2
  .text.libgcc.mul
-                0x00001212       0x14 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_muluhisi3.o)
-                0x00001212                __muluhisi3
+                0x00001238       0x14 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_muluhisi3.o)
+                0x00001238                __muluhisi3
  .text.libgcc.div
-                0x00001226       0x28 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_udivmodhi4.o)
-                0x00001226                __udivmodhi4
+                0x0000124c       0x28 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_udivmodhi4.o)
+                0x0000124c                __udivmodhi4
  .text.libgcc.div
-                0x0000124e       0x44 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_udivmodsi4.o)
-                0x0000124e                __udivmodsi4
+                0x00001274       0x44 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_udivmodsi4.o)
+                0x00001274                __udivmodsi4
  .text.libgcc.mul
-                0x00001292       0x18 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_umulhisi3.o)
-                0x00001292                __umulhisi3
-                0x000012aa                . = ALIGN (0x2)
+                0x000012b8       0x18 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_umulhisi3.o)
+                0x000012b8                __umulhisi3
+                0x000012d0                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x000012aa        0x0 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_exit.o)
-                0x000012aa                _exit
-                0x000012aa                exit
+ .fini9         0x000012d0        0x0 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_exit.o)
+                0x000012d0                _exit
+                0x000012d0                exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -515,11 +517,11 @@ END GROUP
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x000012aa        0x4 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_exit.o)
+ .fini0         0x000012d0        0x4 d:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/4.9.2/avr4\libgcc.a(_exit.o)
  *(.fini0)
-                0x000012ae                _etext = .
+                0x000012d4                _etext = .
 
-.data           0x00800060        0x2 load address 0x000012ae
+.data           0x00800060        0x2 load address 0x000012d4
                 0x00800060                PROVIDE (__data_start, .)
  *(.data)
  *(.data*)
@@ -586,8 +588,8 @@ END GROUP
  COMMON         0x00800091        0x3 LD_TEC_PS.o
                 0x00800091                SCR_D
                 0x00800094                PROVIDE (__bss_end, .)
-                0x000012ae                __data_load_start = LOADADDR (.data)
-                0x000012b0                __data_load_end = (__data_load_start + SIZEOF (.data))
+                0x000012d4                __data_load_start = LOADADDR (.data)
+                0x000012d6                __data_load_end = (__data_load_start + SIZEOF (.data))
 
 .noinit         0x00800094        0x0
                 0x00800094                PROVIDE (__noinit_start, .)
@@ -662,29 +664,29 @@ END GROUP
 .debug_sfnames
  *(.debug_sfnames)
 
-.debug_aranges  0x00000000      0x118
+.debug_aranges  0x00000000      0x120
  *(.debug_aranges)
  .debug_aranges
                 0x00000000       0x28 display.o
  .debug_aranges
                 0x00000028       0x28 EncPoll.o
  .debug_aranges
-                0x00000050       0x60 LD_TEC_PS.o
+                0x00000050       0x68 LD_TEC_PS.o
  .debug_aranges
-                0x000000b0       0x30 pid.o
+                0x000000b8       0x30 pid.o
  .debug_aranges
-                0x000000e0       0x38 timer.o
+                0x000000e8       0x38 timer.o
 
 .debug_pubnames
  *(.debug_pubnames)
 
-.debug_info     0x00000000      0xcde
+.debug_info     0x00000000      0xcf4
  *(.debug_info .gnu.linkonce.wi.*)
  .debug_info    0x00000000      0x1dd display.o
  .debug_info    0x000001dd      0x21b EncPoll.o
- .debug_info    0x000003f8      0x58e LD_TEC_PS.o
- .debug_info    0x00000986      0x217 pid.o
- .debug_info    0x00000b9d      0x141 timer.o
+ .debug_info    0x000003f8      0x5a4 LD_TEC_PS.o
+ .debug_info    0x0000099c      0x217 pid.o
+ .debug_info    0x00000bb3      0x141 timer.o
 
 .debug_abbrev   0x00000000      0x556
  *(.debug_abbrev)
@@ -694,42 +696,42 @@ END GROUP
  .debug_abbrev  0x0000039a       0xd2 pid.o
  .debug_abbrev  0x0000046c       0xea timer.o
 
-.debug_line     0x00000000      0x789
+.debug_line     0x00000000      0x798
  *(.debug_line .debug_line.* .debug_line_end)
  .debug_line    0x00000000      0x122 display.o
  .debug_line    0x00000122      0x145 EncPoll.o
- .debug_line    0x00000267      0x2d7 LD_TEC_PS.o
- .debug_line    0x0000053e       0xec pid.o
- .debug_line    0x0000062a      0x15f timer.o
+ .debug_line    0x00000267      0x2e6 LD_TEC_PS.o
+ .debug_line    0x0000054d       0xec pid.o
+ .debug_line    0x00000639      0x15f timer.o
 
-.debug_frame    0x00000000      0x41c
+.debug_frame    0x00000000      0x464
  *(.debug_frame)
  .debug_frame   0x00000000       0x68 display.o
  .debug_frame   0x00000068       0x68 EncPoll.o
- .debug_frame   0x000000d0      0x218 LD_TEC_PS.o
- .debug_frame   0x000002e8       0x74 pid.o
- .debug_frame   0x0000035c       0xc0 timer.o
+ .debug_frame   0x000000d0      0x260 LD_TEC_PS.o
+ .debug_frame   0x00000330       0x74 pid.o
+ .debug_frame   0x000003a4       0xc0 timer.o
 
-.debug_str      0x00000000      0x4b5
+.debug_str      0x00000000      0x4c0
  *(.debug_str)
  .debug_str     0x00000000      0x1a1 display.o
                                 0x1da (size before relaxing)
  .debug_str     0x000001a1       0x66 EncPoll.o
                                 0x205 (size before relaxing)
- .debug_str     0x00000207      0x1b8 LD_TEC_PS.o
-                                0x373 (size before relaxing)
- .debug_str     0x000003bf       0x9a pid.o
+ .debug_str     0x00000207      0x1c3 LD_TEC_PS.o
+                                0x37e (size before relaxing)
+ .debug_str     0x000003ca       0x9a pid.o
                                 0x235 (size before relaxing)
- .debug_str     0x00000459       0x5c timer.o
+ .debug_str     0x00000464       0x5c timer.o
                                 0x1a5 (size before relaxing)
 
-.debug_loc      0x00000000      0x88d
+.debug_loc      0x00000000      0x930
  *(.debug_loc)
  .debug_loc     0x00000000       0xc4 display.o
  .debug_loc     0x000000c4       0xc4 EncPoll.o
- .debug_loc     0x00000188      0x4b4 LD_TEC_PS.o
- .debug_loc     0x0000063c       0xd6 pid.o
- .debug_loc     0x00000712      0x17b timer.o
+ .debug_loc     0x00000188      0x557 LD_TEC_PS.o
+ .debug_loc     0x000006df       0xd6 pid.o
+ .debug_loc     0x000007b5      0x17b timer.o
 
 .debug_macinfo
  *(.debug_macinfo)
@@ -749,13 +751,13 @@ END GROUP
 .debug_pubtypes
  *(.debug_pubtypes)
 
-.debug_ranges   0x00000000       0xc8
+.debug_ranges   0x00000000       0xd0
  *(.debug_ranges)
  .debug_ranges  0x00000000       0x18 display.o
  .debug_ranges  0x00000018       0x18 EncPoll.o
- .debug_ranges  0x00000030       0x50 LD_TEC_PS.o
- .debug_ranges  0x00000080       0x20 pid.o
- .debug_ranges  0x000000a0       0x28 timer.o
+ .debug_ranges  0x00000030       0x58 LD_TEC_PS.o
+ .debug_ranges  0x00000088       0x20 pid.o
+ .debug_ranges  0x000000a8       0x28 timer.o
 
 .debug_macro
  *(.debug_macro)

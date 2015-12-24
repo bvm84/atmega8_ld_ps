@@ -175,10 +175,13 @@ PT_THREAD(Adc(struct pt *pt))
 	//volatile uint8_t *ptr;
 	PT_BEGIN(pt);
 	PT_WAIT_UNTIL(pt,(st_millis()-adc_lcd_timer)>=10);
-	sleep_enable();
+	/*sleep_enable();
 	ADCSRA|=(_BV(7))|(_BV(6));//заупск преобразования АЦП
 	sleep_cpu();
 	sleep_disable();
+	//этот кусок вроде как повышает стабильность АЦП, но с ним начинаются пропуски импульсов ШИМ
+	*/
+	ADCSRA|=(_BV(7))|(_BV(6));//заупск преобразования АЦП
 	if (averaging<32) {
 		averaging++;
 		aver_value+=ADC_values[0];
@@ -226,15 +229,9 @@ PT_THREAD(LcdSwitch(struct pt *pt))
 
 ISR(TIMER1_COMPA_vect)
 {
-	/*cli();
-	OCR1AH=0;
-	OCR1AL=85;
-	//TCNT1H=0; //сброс таймера
-	//TCNT1L=0;
-	sei();
-	*/
+	OCR1AL=EncoderValue;
 }
-ISR(TIM)
+
 ISR(ADC_vect)
 {
 	ADC_values[ADC_counter]=ADCH;
