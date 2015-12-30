@@ -31,9 +31,9 @@
 /// массив "экранной области" слепок экрана
 #define LCD_PORT_1 PORTD
 #define LCD_PORT_2 PORTB
-//extern volatile uint8_t SCR_D[SCR_SIZE];
+
 PT_THREAD(SegDyn(struct pt *pt));
-static uint8_t digit (uint8_t d);
+extern volatile uint8_t SCR_D[SCR_SIZE];
 
 //extern uint32_t st_millis(void);
 
