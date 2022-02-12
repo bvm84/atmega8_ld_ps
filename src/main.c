@@ -8,7 +8,7 @@
 #include <avr/io.h>
 #include "display.h"
 #include <util/atomic.h>
-#include <pt.h>
+#include <pt-1.4/pt.h>
 #include "timer.h"
 #include "EncPoll.h"
 #include "pid.h"

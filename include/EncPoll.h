@@ -12,7 +12,7 @@
 #include <inttypes.h>
 #include <avr/pgmspace.h>
 #include "timer.h"
-#include <pt.h>
+#include <pt-1.4/pt.h>
 
 #define ENCPOLL_PORT B
 #define ENCPOLL_A_PIN 4

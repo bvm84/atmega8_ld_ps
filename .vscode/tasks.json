@@ -1,0 +1,81 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "Build",
+			"command": "",
+			"args": [
+				"make",
+				"all",
+			],
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"presentation": {
+                "reveal":"always"
+            }
+		},
+		{
+			"type": "shell",
+			"label": "Clean",
+			"command": "",
+			"args": [
+				"make",
+				"clean",
+			],
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"presentation": {
+                "reveal":"always"
+            }
+		},
+		{
+			"type": "shell",
+			"label": "Flash",
+			"command": "",
+			"args": [
+				"make",
+				"flash",
+			],
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"presentation": {
+                "reveal":"always"
+            }
+		},
+		{
+			"type": "shell",
+			"label": "Test",
+			"command": "",
+			"args": [
+				"make",
+				"test",
+			],
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"presentation": {
+                "reveal":"always"
+            }
+		},
+	]
+}

@@ -1,0 +1,27 @@
+{
+    "configurations": [
+        {
+            "name": "AVR",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:/code/avr-gcc-11.1.0-x64-windows/avr/include/**"
+            ],
+            "defines": [
+                "__ATmega8__",
+                "__AVR_ATmega8__",
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "10.0.19041.0",
+            "compilerPath": "C:/code/avr-gcc-11.1.0-x64-windows/bin/avr-gcc.exe",
+            "cStandard": "c99",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "gcc-x64",
+            "compilerArgs": [
+                "-mmcu=atmega8"
+            ]
+        }
+    ],
+    "version": 4
+}
