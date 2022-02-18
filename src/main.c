@@ -1,8 +1,11 @@
 #include "board.h"
-
+extern uint8_t SCR_D[SCR_SIZE];
 static volatile uint8_t PWM_value=0; 
 static struct PID_DATA *pid_reg_st; //структура ПИД
-
+static struct pt_sem display_sem;
+//extern struct pt_sem button_sem;
+extern struct pt_sem button_sem;
+extern uint8_t EncoderValue;
 //Указатели на структуру протопотоков
 static struct pt SegDyn_pt; //выводит цифры на индикатор
 static struct pt EncoderScan_pt; //сканирует поворот ручки экнкодер
@@ -77,11 +80,6 @@ int main(void)
 	TCNT1=0;
 	TIMSK=0;
 	TIMSK |= _BV(TOIE0) | _BV(OCIE1A);
-	//инициализация АЦП
-	ADMUX=0b11100000; //опорное напряжение от внутреннего ИОН (2,56V), выравнивание по левому краю (читаем только ADCH), присоединить АЦП к входу ADC0;
-	ADCSRA=0b00001111; //резрешить прерывание от АЦП, Установить делитель частоты 128
-	MCUCR|=0b00010000;//установить ADC_noise canceling mode
-	
 
 	//noise_level_value=ADC_init();
 	pid_Init(P_FACTOR,I_FACTOR,D_FACTOR, pid_reg_st);
@@ -91,6 +89,9 @@ int main(void)
 	PT_INIT(&EncoderScan_pt);
 	PT_INIT(&Adc_pt);
 	PT_INIT(&LcdSwitch_pt);
+	PT_SEM_INIT(&display_sem, 0); //отображаем ток по умолчанию
+	PT_SEM_INIT(&button_sem, 0); //отображаем ток по умолчанию
+	EncoderValue = 1;
 	//PT_INIT(&CurrentCalc_pt);
 	//PT_INIT(&PID_LD_CURR_pt);
 	
