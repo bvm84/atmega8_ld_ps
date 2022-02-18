@@ -1,20 +1,20 @@
 #include "board.h"
 
-static volatile uint8_t ADC_values[]={0,0,0,0}; //8 бит АЦП пока
-static volatile uint8_t ADC_counter=0;
-static volatile uint16_t ADC0_value=0;
+static volatile uint16_t AdcValues[N_CHANNELS]={0,0,0,0}; //10 бит значения АЦП
+static volatile uint8_t AdcCounter=0;
+uint16_t AveragedAdcValues[N_CHANNELS];
 ISR(ADC_vect) {
-	ADC_values[ADC_counter]=ADCH;
-	ADMUX|=0b00001111; //все каналы АЦП сажаем на землю, перобразование окончено
-	ADC_counter++;
-	if (ADC_counter<4) {
-		ADMUX=(ADMUX&(~15))|ADC_counter; //подключаем нужный канал
+	AdcValues[AdcCounter] = ADCW;
+	ADMUX |= 0b00001111; //все каналы АЦП сажаем на землю, перобразование окончено
+	AdcCounter++;
+	if (AdcCounter < 4) {
+		ADMUX = (ADMUX &(~15)) | AdcCounter; //подключаем нужный канал
 	}
 	else {
-		ADC_counter=0; //сбрасываем счетчик
-		ADMUX=(ADMUX&(~15));//подключаем нулевой канал АЦП
+		AdcCounter = 0; //сбрасываем счетчик
+		ADMUX = (ADMUX &(~15));//подключаем нулевой канал АЦП
 	}
-	ADCSRA|=(_BV(6)); //так рабоатет в режиме фри  ранинг моде херня со смещением данных с каналов в массиве
+	ADCSRA |= (_BV(6)); //так рабоатет в режиме фри  ранинг моде херня со смещением данных с каналов в массиве
 }
 /*
 усреднение АЦП -> суммируем 32 раза и сдвигаем на 5 (деление на 32).
@@ -24,30 +24,32 @@ ISR(ADC_vect) {
 */
 PT_THREAD(Adc(struct pt *pt))
 {
-	static volatile uint8_t adc_lcd_timer=0, averaging=0;
-	static volatile uint32_t aver_value=0; 
+	static volatile uint8_t AdcTimer=0, AveragingCounter=0;
+	static volatile uint32_t AdcSums[N_CHANNELS] = {0, 0, 0, 0}; 
 	//volatile uint8_t *ptr;
 	PT_BEGIN(pt);
-	PT_WAIT_UNTIL(pt,(st_millis()-adc_lcd_timer)>=10);
+	PT_WAIT_UNTIL(pt,(st_millis() - AdcTimer) >= 10);
+    //инициализация АЦП
+	ADMUX = 0b11100000; //опорное напряжение от внутреннего ИОН (2,56V), присоединить АЦП к входу ADC0;
+	ADCSRA = 0b00001111; //резрешить прерывание от АЦП, Установить делитель частоты 128
+	MCUCR |= 0b00010000;//установить ADC_noise canceling mode
 	/*sleep_enable();
 	ADCSRA|=(_BV(7))|(_BV(6));//заупск преобразования АЦП
 	sleep_cpu();
 	sleep_disable();
 	//этот кусок вроде как повышает стабильность АЦП, но с ним начинаются пропуски импульсов ШИМ
 	*/
-	ADCSRA|=(_BV(7))|(_BV(6));//заупск преобразования АЦП
-	if (averaging<32) {
-		averaging++;
-		aver_value+=ADC_values[0];
-		}
+	ADCSRA |= (_BV(7))|(_BV(6));//заупск преобразования АЦП
+	if (AveragingCounter < 32) {
+		AveragingCounter++;
+        for(uint8_t i=0; i<N_CHANNELS; i++) AdcSums[i]+=AdcValues[i];
+    }
 	else {
-		averaging=0;
-		ADC0_value=aver_value>>5;//&&((st_millis()-adc_lcd_timer)>=1)
-		//ptr=&SCR_D[0];
-		//ptr=(volatile uint8_t *)utoa_fast_div((uint32_t)ADC0_value, (uint8_t *)ptr);
-		aver_value=0;
+		AveragingCounter = 0;
+        for(uint8_t i=0; i<N_CHANNELS; i++) AveragedAdcValues[i] += AdcSums[i]>>5;
+		for(uint8_t i=0; i<N_CHANNELS; i++) AdcSums[i] = 0;
 		}
-	adc_lcd_timer=st_millis();
+	AdcTimer = st_millis();
 	PT_END(pt);
 }
 /* функция инициализации АЦП и нахождения уровня шума, передумал делать, может в будущем пригодится

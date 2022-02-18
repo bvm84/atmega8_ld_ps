@@ -2,7 +2,7 @@
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 #include "display.h"
-
+uint8_t SCR_D[SCR_SIZE];
 /// Если нужно мерцание цифр (нужен таймер)
 //uint8_t blink = 0;
 inline static struct divmod10_t divmodu10(uint32_t n);
@@ -15,10 +15,10 @@ PT_THREAD(SegDyn(struct pt *pt)) {
 	uint8_t cathode=0;
 	PT_BEGIN(pt);
 	while (cathode<SCR_SIZE) {
-		PT_WAIT_UNTIL(pt, (st_millis()-last_timer)>=5);
+		PT_WAIT_UNTIL(pt, (st_millis()-last_timer)>=5); //5сек на свечение одного разряда
 		last_timer = st_millis();
 		LCD_PORT_1 = 0;//segments off, CC0 off
-		//LCD_PORT_2&=(~(_BV(6))); //CC2, CC3 off (���������� ���� ����)
+		//LCD_PORT_2&=(~(_BV(6))); //CC2, CC3 off
 		//LCD_PORT_2&=(~(_BV(7)));
 		LCD_PORT_2 &= CC2_CC3_MASK;
 		PT_WAIT_UNTIL(pt, (st_millis()-last_timer) >= 1); //задержка после погашения индикаторов
@@ -31,8 +31,7 @@ PT_THREAD(SegDyn(struct pt *pt)) {
 	}
 	PT_END(pt);
 }
-inline static struct divmod10_t divmodu10(uint32_t n)
-{
+inline static struct divmod10_t divmodu10(uint32_t n) {
 	struct divmod10_t res;
 	// умножаем на 0.8
 	res.quot = n >> 1;
@@ -41,19 +40,15 @@ inline static struct divmod10_t divmodu10(uint32_t n)
 	res.quot += res.quot >> 8;
 	res.quot += res.quot >> 16;
 	uint32_t qq = res.quot;
-	// делим на 8
-	res.quot >>= 3;
-	// вычисляем остаток
-	res.rem = (uint8_t)(n - ((res.quot << 1) + (qq & ~7ul)));
+	res.quot >>= 3; // делим на 8
+	res.rem = (uint8_t)(n - ((res.quot << 1) + (qq & ~7ul))); // вычисляем остаток
 	// корректируем остаток и частное
-	if(res.rem > 9)
-	{
+	if(res.rem > 9) {
 		res.rem -= 10;
 		res.quot++;
 	}
 	return res;
 }
-
 char * utoa_fast_div(uint32_t value, uint8_t *buffer) {	
 	uint8_t i=0;
 	buffer += SCR_SIZE;

@@ -17,10 +17,6 @@
 #define BUTTON_LONG_ON 2
 #define BUT_MASK 16
 
-extern uint16_t EncoderValue;
-extern uint8_t ButtonState;
-
-
 PT_THREAD(EncoderScan(struct pt *pt));
 PT_THREAD(EncoderButton(struct pt *pt));
 

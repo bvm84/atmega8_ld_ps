@@ -17,7 +17,6 @@ struct divmod10_t {
 	uint32_t quot;
 	uint8_t rem;
 };
-extern uint8_t SCR_D[SCR_SIZE];
 PT_THREAD(SegDyn(struct pt *pt));
 char * utoa_fast_div(uint32_t value, uint8_t *buffer);
 

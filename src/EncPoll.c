@@ -11,9 +11,11 @@
 
  */ 
 #include "board.h"
-
-uint16_t EncoderValue=0;
-uint8_t ButtonState=BUTTON_ADC;
+uint8_t EncoderValue;
+struct pt_sem button_sem;
+//extern struct pt_sem button_sem;
+//extern uint8_t EncoderValue;
+// uint8_t ButtonState=BUTTON_ADC;
 
 //void inline button_change_state(void);
 
@@ -31,55 +33,34 @@ const int8_t EncState[] PROGMEM =
 
 PT_THREAD(EncoderScan(struct pt *pt))
 {
-	static	uint8_t	EncVal=1;
-	static	uint8_t	Enc=0;
-	static uint8_t enc_timer=0;
-	
 	PT_BEGIN(pt);
-	PT_WAIT_UNTIL(pt, st_millis()-enc_timer>=1);
-	enc_timer=st_millis();
-	
+	PT_WAIT_UNTIL(pt, (PIN(ENCPOLL_PORT) & (1<<ENCPOLL_A_PIN)) ||(PIN(ENCPOLL_PORT) & (1<<ENCPOLL_B_PIN)));
+	//Поток не запустится пока не сработает энкодер
+	uint8_t Enc=0;
 	Enc += ((PIN(ENCPOLL_PORT) & ((1<<ENCPOLL_A_PIN)|(1<<ENCPOLL_B_PIN)))>>3);
-	PT_WAIT_UNTIL(pt, st_millis()-enc_timer>=1);
-	EncVal -= pgm_read_byte(&(EncState[Enc]));
+	EncoderValue -= pgm_read_byte(&(EncState[Enc]));
 	Enc <<= 2;
 	Enc &= 0b00001111;
-	
-	//if (EncVal > 0xfe) EncVal = 0;
-	if (EncVal < 1) EncVal = 1;
-	if (EncVal > 254) EncVal = 254; //600 = 6A current
-	
-	EncoderValue=EncVal;
-	
+	if (EncoderValue < 1) EncoderValue = 1;
+	if (EncoderValue > 254) EncoderValue = 254; //600 = 6A current
 	PT_END(pt);
 }
-PT_THREAD(EncoderButton(struct pt *pt))
-{
-	static uint32_t but_timer=0;
+PT_THREAD(EncoderButton(struct pt *pt)) {
 	static uint16_t val=0;
 	PT_BEGIN(pt);
-	PT_WAIT_UNTIL(pt, (st_millis()-but_timer)>=1);
-	but_timer=st_millis();
-	if (((PIN(ENCBUT_PORT)&(_BV(ENCBUT_PIN)))==0)&&(val<=1000))
-	{
+	PT_WAIT_UNTIL(pt, ((PIN(ENCBUT_PORT)&(_BV(ENCBUT_PIN))))); //поток не запустится пока не будет зфиксировано нажатие
+	while (((PIN(ENCBUT_PORT)&(_BV(ENCBUT_PIN)))==0)&&(val<=1000)) {
 		val++;
 	}
-	else
-	{
-		if (val>900)
-		{
-			//ButtonState=BUTTON_LONG_ON; - это сейчас не нужно, вдруг пригодится обрабатывать долгие нажатия
-			PT_WAIT_UNTIL(pt,(st_millis()-but_timer)>=1000);
-		}
-		else if (val>=5)
-		{
-			if (ButtonState==BUTTON_ADC) ButtonState=BUTTON_ENC;
-			else if (ButtonState==BUTTON_ENC) ButtonState=BUTTON_PID;
-			else if (ButtonState==BUTTON_PID) ButtonState=BUTTON_ADC;
-			//button_change_state();
-		}
-		val=0;
+	if (val>900) {
+		//ButtonState=BUTTON_LONG_ON; - это сейчас не нужно, вдруг пригодится обрабатывать долгие нажатия
+		PT_SEM_SIGNAL(pt, &button_sem);
+		PT_SEM_SIGNAL(pt, &button_sem);
 	}
+	else if (val>=5) {
+		PT_SEM_SIGNAL(pt, &button_sem);
+	}
+	val=0;
 	PT_END(pt);
 }
 

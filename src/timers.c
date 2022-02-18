@@ -6,7 +6,8 @@ ISR(TIMER0_OVF_vect) {
 	TCNT0 = ST_CTC_HANDMADE;
 }
 ISR(TIMER1_COMPA_vect) {
-	OCR1AL=EncoderValue;
+	//OCR1AL=EncoderValue;
+	;
 }
 uint32_t st_millis(void) {
 	uint32_t m;
