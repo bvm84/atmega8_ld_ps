@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "display.h": "c",
+        "board.h": "c",
+        "encpoll.h": "c"
+    }
+}

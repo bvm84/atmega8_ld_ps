@@ -1,48 +1,30 @@
-/** \file display.h
- * \brief Заголовочный файл модуля дисплея
- * прототипы функций и константы с макросами\n
- * \par
- * \author ARV
- * \note
- * \n Схема:
- * \n \date	12.11.2008 ... 	__.__.2008
- * \par
- * \version v1.00	\n
- * Copyright 2008 © ARV. All rights reserved. </b>
- * \par
- * Для сборки проекта требуется:
- * 	-# WinAVR-20080411 или более новая версия
- *
- */
+#ifndef __DISPLAY_H__
+#define __DISPLAY_H__
 
-
-#ifndef DISPLAY_H_
-#define DISPLAY_H_
-
-/// тип индикаторов
+#include "board.h"
+//РњР°СЃРєР° РґР»СЏ РѕР±РЅСѓР»РµРЅРёСЏ РєР°С‚РѕРґРѕРІ РЅР° РїРѕСЂС‚Рµ B
+#define CC2_CC3_MASK 0xC0
+//РћРїСЂРµРґРµР»СЏРµРј С‚РёРї СЃРµРјРёСЃРµРіРјРµРЅС‚РЅРѕРіРѕ РёРЅРґРёРєР°С‚РѕСЂР°
 #define common_anode 0
-
-#include "leds7.h"
-#include "pt-1.4/pt.h"
-#include "timer.h"
-
-/// "размер" дисплея
+//РњР°СЃРєР° РґР»СЏ С‚СЂР°РЅР·РёСЃС‚РѕСЂРѕРІ РєР°С‚РѕРґРѕРІ РЅР° PORTB
+#define CC2_CC3_MASK 0xC0
+//РљРѕР»РёС‡РµСЃС‚РІРѕ С†РёС„СЂ РІ РёРЅРґРёРєР°С‚РѕСЂРµ
 #define SCR_SIZE 3
-/// массив "экранной области" слепок экрана
+//РћРїСЂРµРґРµР»СЏРµРј РїРѕСЂС‚С‹ Рє РєРѕС‚РѕСЂС‹Рј РїРїРѕРґРєР»СЋС‡РµРЅ СЃРµРјРёСЃРµРіРјРµРЅС‚РЅС‹Р№ РёРЅРґРёРєС‚РѕСЂ
 #define LCD_PORT_1 PORTD
 #define LCD_PORT_2 PORTB
-
+struct divmod10_t {
+	uint32_t quot;
+	uint8_t rem;
+};
+extern uint8_t SCR_D[SCR_SIZE];
 PT_THREAD(SegDyn(struct pt *pt));
-extern volatile uint8_t SCR_D[SCR_SIZE];
+char * utoa_fast_div(uint32_t value, uint8_t *buffer);
 
-//extern uint32_t st_millis(void);
-
-/// флаг для мигания
+//Р•СЃР»Рё РЅСѓР¶РЅРѕ РјРёРіР°РЅРёСЏ
 //extern uint8_t blink;
-/// Вывод в десятичном формате со знаком
+//Р’С‹РІРѕРґ РґРµСЃСЏС‚РёС‡РЅРѕРіРѕ?
 //void print_dec(int data);
-/// Вывод в 16-ичном формате
+//РњР°СЃСЃРёРІ С†РёС„СЂ
 //static uint8_t digit(uint8_t d);
-
-
-#endif /* DISPLAY_H_ */
+#endif

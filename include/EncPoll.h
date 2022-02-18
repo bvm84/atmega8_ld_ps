@@ -1,18 +1,5 @@
-﻿/*
- * EncPoll.h
- *
- * Created: 03.12.2013 13:47:53
- *  Author: Вадим
- */ 
-
-
-#ifndef ENCPOLL_H_
+﻿#ifndef ENCPOLL_H_
 #define ENCPOLL_H_
-
-#include <inttypes.h>
-#include <avr/pgmspace.h>
-#include "timer.h"
-#include <pt-1.4/pt.h>
 
 #define ENCPOLL_PORT B
 #define ENCPOLL_A_PIN 4

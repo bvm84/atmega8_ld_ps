@@ -10,14 +10,14 @@
  Также  EncoderButton теперь переключает режим отображения
 
  */ 
-#include "EncPoll.h"
+#include "board.h"
 
 uint16_t EncoderValue=0;
 uint8_t ButtonState=BUTTON_ADC;
 
 //void inline button_change_state(void);
 
-const	int8_t	EncState[] PROGMEM =
+const int8_t EncState[] PROGMEM =
 {
 	0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0
 };
@@ -83,7 +83,7 @@ PT_THREAD(EncoderButton(struct pt *pt))
 	PT_END(pt);
 }
 
-/* проверить сосотояние кнопки
+/* проверить состояние кнопки
 если нажата, увеличиваем счетчик и ждем 100мсек
 если через 100мсек все еще нажата, увеличиваем счетчик еще
 и так до 5 раз

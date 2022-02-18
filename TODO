@@ -1,43 +1,20 @@
-1. Нужно сделать 2 структуры настроек: hardware_settings - здесь будут настройки которые завязаны на железо, светодиоды, кнопки и проч.
-user_settings - эти настройки хранятся в eeprom и моугут меняться пользователем.
-При загрузке устроства настройки мапятся в структуру глобального состояния.
-В режиме настроек создается временная структура налогичная user_settings. По окончанию настроек структура пишется в eeprom.
-Затем снова настройки снова грузятся в глобальное состояние (сделать функцию).
-2. Создать струтуру глобального состония контроллера - штатный, настроки, заблокирован, и проч.
-2. В структруре на исполнительные устройтсва и логические датичик будут подстктуры, в которых будет состояние - АКТИВЕН/НЕАККТИВЕН,
-и полярность активного состояния - ВЫСОКИЙ/НИЗКИЙ.
-3. Написать протопоток слежения за датчиками уровня и индикации, он работает если глобалдьное состояния - штатное.
-4. Протопоток слежения за EnableInput. Работает если в струтуре глобального состояния разрешена эта функция.
-Этот протопоток может в глобальном состоянии выставлять блокировонное состоние и управляет AlarmOut.
-5. При загрузке прошивки обязательно нужно прошить eep file
-Что-то типа avrdude -c usbasp -p atmega8 -U flash:w:oled12832.hex -U eeprom:w:oled12832.eep -U lfuse:w:0x6a:m -U hfuse:w:0xff:m 
-http://easyelectronics.ru/avr-uchebnyj-kurs-ispolzovanie-bootloadera.html
+1. Сначала сделать индикацию тока и напряжения на CUR_MON, V_MON.
+2. Затем установку тока энкодером.
+3. Затем ПИД через ШИМ, отработку Error.
+4. Затем опциональные задачи.
+5. При загрузке прошивки обязательно нужно прошить eep file. Фьюзы на 2МГЦ от внутреннего генератора
+/*
+to do: DDRB PIN6,PIN7 - ouputs (CA2,CA3)
+	   DDRB PIN0 - ouputs (dot)
+	   DDRD PIN7 - otput (CA1)
+	   
+	   PORTB PIN1 - out PWM TEC, PIN2- input ERROR_IN (RED_BUTTON), PIN3,PIN4 - inputs encoder, PIN5 - input encoder button  
+	   PortA - Pin0 - Cur_Mon, Pin1 - V_mon, Pin2 - NTC1, PIN3 - NTC2, PIN4 - LD_PWM_OUT, PIN5 - DS raiator sensor
 
-avr-gcc (AVR_8_bit_GNU_Toolchain_3.6.2_1778) 5.4.0
-Copyright (C) 2015 Free Software Foundation, Inc.
-This is free software; see the source for copying conditions.  There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+*/
 
-avr-gcc -mmcu=atmega8 -Wall -g -Os -w -lm -mcall-prologues -std=gnu99 -Iinclude -MMD -MP -DF_CPU=8000000 -c src/i2c.c -o output/i2c.o
-avr-gcc -mmcu=atmega8 -Wall -g -Os -w -lm -mcall-prologues -std=gnu99 -Iinclude -MMD -MP -DF_CPU=8000000 -c src/main.c -o output/main.o
-avr-gcc -mmcu=atmega8 -Wall -g -Os -w -lm -mcall-prologues -std=gnu99 -Iinclude -MMD -MP -DF_CPU=8000000 -c src/lcd.c -o output/lcd.o
-avr-gcc -mmcu=atmega8 -Wall -g -Os -w -lm -mcall-prologues -std=gnu99 -Iinclude -MMD -MP -DF_CPU=8000000 -c src/ds18b20.c -o output/ds18b20.o
-avr-gcc -mmcu=atmega8 -Wall -g -Os -w -lm -mcall-prologues -std=gnu99 -Iinclude -MMD -MP -DF_CPU=8000000 -c src/onewire.c -o output/onewire.o
-avr-gcc -mmcu=atmega8 -Wall -g -Os -w -lm -mcall-prologues -std=gnu99 -Iinclude -MMD -MP -DF_CPU=8000000 -c src/romsearch.c -o output/romsearch.o
-avr-gcc -mmcu=atmega8 -Wall -g -Os -w -lm -mcall-prologues -std=gnu99 -Iinclude -MMD -MP -DF_CPU=8000000 -c src/settings.c -o output/settings.o
-avr-gcc -mmcu=atmega8 -Wall -g -Os -w -lm -mcall-prologues -std=gnu99 -Iinclude -MMD -MP -DF_CPU=8000000 -o output/main.elf output/i2c.o output/main.o output/lcd.o output/ds18b20.o output/onewire.o output/romsearch.o output/settings.o
-avr-objcopy -O binary -R .eeprom -R .nwram  output/main.elf output/main.bin
-avr-objcopy -O ihex -R .eeprom -R .nwram  output/main.elf output/main.hex
-avr-objcopy -O ihex -j .eeprom --set-section-flags=.eeprom="alloc,load" --change-section-lma .eeprom=0 output/main.elf output/main.eep
-avr-objdump -h -S output/main.elf > output/main.lst
-   text    data     bss     dec     hex filename
-      0    6782       0    6782    1a7e output/main.hex
-   text    data     bss     dec     hex filename
-      0      21       0      21      15 output/main.eep
-
-
-
-Trivial Variables: i,n,c,etc... (Only one letter. If one letter isn't clear, then make it a Local Variable)
+Code style mentions:
+Trivial Variables: i,n,c,etc... (Only one letter. If one letter isnt clear, then make it a Local Variable)
 Local Variables: camelCase
 Global Variables: g_camelCase
 Const Variables: ALL_CAPS
@@ -50,9 +27,10 @@ Public Functions: ModulePascalCase
 Private Functions: PascalCase
 Macros: PascalCase
 
+Another code style mentions:
 All macros and constants in caps: MAX_BUFFER_SIZE, TRACKING_ID_PREFIX.
-Struct names and typedef's in camelcase: GtkWidget, TrackingOrder.
+Struct names and typedefs in camelcase: GtkWidget, TrackingOrder.
 Functions that operate on structs: classic C style: gtk_widget_show(), tracking_order_process().
 Pointers: nothing fancy here: GtkWidget *foo, TrackingOrder *bar.
-Global variables: just don't use global variables. They are evil.
-Functions that are there, but shouldn't be called directly, or have obscure uses, or whatever: one or more underscores at the beginning: _refrobnicate_data_tables(), _destroy_cache().
+Global variables: just dont use global variables. They are evil.
+Functions that are there, but shouldnt be called directly, or have obscure uses, or whatever: one or more underscores at the beginning: _refrobnicate_data_tables(), _destroy_cache().
