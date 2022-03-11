@@ -13,6 +13,7 @@
 #include "display.h"
 #include "encpoll.h"
 #include "pid.h"
+#include "adc.h"
 //Timers definitions
 #define ST_CTC_HANDMADE ((uint8_t) 255-10) // TImer0 settings
 //PID parameters
@@ -25,13 +26,20 @@
 #define SB(reg, bit_no)   (reg) |= B(bit_no)
 #define VB(reg, bit_no)   ( (reg) & B(bit_no) )
 #define TB(reg, bit_no)   (reg) ^= B(bit_no)
-//ADC definitions
-#define N_CHANNELS 4
+
+//LD definitions
+#define LD_CURRENT_MAX 128 //1.28A max curent
+#define LD_CURRENT_MIN 0
+#define LD_VOLTAGE_MAX 32 //3.2V max voltage
+#define LD_VOLTAGE_MIN 0
+
+#define SHOW_LD_CURRENT     0
+#define SHOW_LD_VOLTAGE     1
+#define SHOW_TEC_TEMP       2
+#define SHOW_TEC_CURERNT    3
 
 
 uint32_t st_millis(void);
 ISR(TIMER0_OVF_vect); 
-
-PT_THREAD(Adc(struct pt *pt));
 
 #endif

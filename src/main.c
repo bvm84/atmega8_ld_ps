@@ -1,25 +1,35 @@
 #include "board.h"
 extern uint8_t SCR_D[SCR_SIZE];
+extern uint16_t AdcValues[N_CHANNELS]; //10 бит значения АЦП
 static volatile uint8_t PWM_value=0; 
 static struct PID_DATA *pid_reg_st; //структура ПИД
 static struct pt_sem display_sem;
 //extern struct pt_sem button_sem;
 extern struct pt_sem button_sem;
 extern uint8_t EncoderValue;
+volatile uint16_t LdCurrent;
+volatile uint16_t LdVoltage;
+volatile uint16_t TecTemp;
+volatile uint16_t TecCurrent;
 //Указатели на структуру протопотоков
-static struct pt SegDyn_pt; //выводит цифры на индикатор
 static struct pt EncoderScan_pt; //сканирует поворот ручки экнкодер
-static struct pt CurrentCalc_pt; //вычисляет ток черех ЛД
+static struct pt CurrentCalc_pt; //вычисляет ток через ЛД
 static struct pt EncoderButton_pt; //сканирует кнопку энкодера
 static struct pt PidCurr_pt; //PID, выдает значение ШИМ
 static struct pt Adc_pt; //Получает данные от АЦП
 static struct pt LcdSwitch_pt; //переключает отображаемый параметр на семисегнтнике
 
-PT_THREAD(CurrentCalc(struct pt *pt)) {
+PT_THREAD(CurentVoltageCalc(struct pt *pt)) {
 	PT_BEGIN(pt);
-	volatile uint8_t *ptr;
-	ptr=&SCR_D[0]; //берем указатель на слепок экрана
-	ptr=(volatile uint8_t *)utoa_fast_div((uint32_t)EncoderValue, (uint8_t *)ptr);
+	uint8_t *ptr;
+	LdCurrent = AdcValues[0] >> 3;
+	LdVoltage = AdcValues[1] >> 5;
+	TecTemp = AdcValues[2] >> 5;
+	TecCurrent = AdcValues[3] >> 5;
+
+
+	ptr = &SCR_D[0]; //берем указатель на слепок экрана
+	ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)EncoderValue, (uint8_t *)ptr);
 	PT_END(pt);
 }
 PT_THREAD(PidCurr(struct pt *pt)) {
