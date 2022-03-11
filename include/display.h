@@ -18,7 +18,7 @@ struct divmod10_t {
 	uint8_t rem;
 };
 PT_THREAD(SegDyn(struct pt *pt));
-char * utoa_fast_div(uint32_t value, uint8_t *buffer);
+char * utoa_fast_div(uint32_t value, char *buffer);
 
 //Если нужно мигания
 //extern uint8_t blink;

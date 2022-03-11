@@ -1,6 +1,6 @@
 #include "board.h"
 
-static volatile uint16_t AdcValues[N_CHANNELS]={0,0,0,0}; //10 бит значения АЦП
+uint16_t AdcValues[N_CHANNELS]={0,0,0,0}; //10 бит значения АЦП
 static volatile uint8_t AdcCounter=0;
 uint16_t AveragedAdcValues[N_CHANNELS];
 ISR(ADC_vect) {
