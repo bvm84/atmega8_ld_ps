@@ -17,8 +17,23 @@ static struct pt CurrentCalc_pt; //вычисляет ток через ЛД
 static struct pt EncoderButton_pt; //сканирует кнопку энкодера
 static struct pt PidCurr_pt; //PID, выдает значение ШИМ
 static struct pt Adc_pt; //Получает данные от АЦП
-static struct pt LcdSwitch_pt; //переключает отображаемый параметр на семисегнтнике
+static struct pt DisplayOut_pt; //переключает отображаемый параметр на семисегнтнике
+extern uint16_t LdCurrent;
+extern uint16_t LdVoltage;
+extern uint16_t TecTemp;
+extern uint16_t TecCurrent;
+uint8_t ValueToShow = SHOW_LD_CURRENT;
 
+PT_THREAD(DisplayOut(struct pt *pt)) {
+	PT_BEGIN(pt);
+	uint8_t *ptr = &SCR_D[0];
+	if (ValueToShow == SHOW_LD_CURRENT) ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)LdCurrent, (uint8_t *)ptr);
+	else if (ValueToShow == SHOW_LD_VOLTAGE) ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)LdVoltage, (uint8_t *)ptr);
+	else if (ValueToShow == SHOW_TEC_TEMP) ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)TecTemp, (uint8_t *)ptr);
+	else if (ValueToShow == SHOW_TEC_TEMP) ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)TecCurrent, (uint8_t *)ptr);
+	seg_dyn();
+	PT_END(pt);
+}
 PT_THREAD(CurentVoltageCalc(struct pt *pt)) {
 	PT_BEGIN(pt);
 	uint8_t *ptr;
@@ -26,10 +41,7 @@ PT_THREAD(CurentVoltageCalc(struct pt *pt)) {
 	LdVoltage = AdcValues[1] >> 5;
 	TecTemp = AdcValues[2] >> 5;
 	TecCurrent = AdcValues[3] >> 5;
-
-
-	ptr = &SCR_D[0]; //берем указатель на слепок экрана
-	ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)EncoderValue, (uint8_t *)ptr);
+	PT_SPAWN(DisplayOut_pt);
 	PT_END(pt);
 }
 PT_THREAD(PidCurr(struct pt *pt)) {
@@ -43,11 +55,8 @@ PT_THREAD(PidCurr(struct pt *pt)) {
 }
 PT_THREAD(LcdSwitch(struct pt *pt)) {
 	static volatile uint8_t lcd_switch_timer=0; 
-	char * ptr=0;
-	uint16_t pid_value=0;
 	PT_BEGIN(pt);
 	PT_WAIT_UNTIL(pt,(st_millis()-lcd_switch_timer)>=100);
-	ptr=&SCR_D[0];
 	/*
 	pid_value=pid_Controller((int16_t)EncoderValue, (int16_t)ADC0_value, pid_reg_st);
 	if (ButtonState==BUTTON_ADC) ptr=(volatile uint8_t *)utoa_fast_div((uint32_t)ADC0_value, (uint8_t *)ptr); //включить dot
