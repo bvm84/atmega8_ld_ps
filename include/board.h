@@ -31,24 +31,19 @@
 #define LD_VOLTAGE_MAX 32 //3.2V max voltage
 #define LD_VOLTAGE_MIN 0
 
-#define SHOW_LD_CURRENT     0
-#define SHOW_LD_VOLTAGE     1
-#define SHOW_TEC_TEMP       2
-#define SHOW_TEC_CURERNT    3
+#define CONTROL_LD_CURRENT      10
+#define SET_MAX_CURENT          11
+#define SET_MAX_VOLTAGE         12
+#define LD_OVERCURRENT_ERROR    13
+#define LD_OVERVOLTAGE_ERROR    14
 
 typedef struct device_cb {
-    uint8_t displayType;
+    uint8_t deviceState;
     uint16_t setLdI;
     uint16_t currentLdI;
-	uint16_t setTecTemp;
-	uint16_t currentTecTemp;
 	uint16_t currentLdV;
-	uint16_t currentTecI;
     uint16_t maxLdI;
-    uint16_t thrLdI;
-    uint16_t maxTemp;
     uint16_t maxLdV;
-    uint16_t maxTecI;
 } device_cb;
 
 uint32_t st_millis(void);

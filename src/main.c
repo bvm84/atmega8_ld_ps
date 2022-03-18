@@ -7,26 +7,17 @@ extern uint16_t TecCurrent;
 static volatile uint8_t PWM_value=0; 
 static struct PID_DATA *pid_reg_st; //структура ПИД
 static device_cb deviceCb = {
-	.displayType = SHOW_LD_CURRENT,
+	.deviceState = CONTROL_LD_CURRENT,
 	.setLdI = 0,
 	.currentLdI = 0,
-	.setTecTemp = 25,
-	.currentTecTemp = 0,
 	.currentLdV = 0,
-	.currentTecI = 0,
 	.maxLdI = 1024,
-	.thrLdI = 100,
-    .maxTemp = 50,
-	.maxLdV = 2,
-    .maxTecI = 5
+	.maxLdV = 0
 };
-void display_out(void) {
+void display_out(uint16_t value) {
 	uint8_t *ptr = &SCR_D[0];
-	if (deviceCb.displayType == SHOW_LD_CURRENT) ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)LdCurrent, (uint8_t *)ptr);
-	else if (deviceCb.displayType == SHOW_LD_VOLTAGE) ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)LdVoltage, (uint8_t *)ptr);
-	else if (deviceCb.displayType == SHOW_TEC_TEMP) ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)TecTemp, (uint8_t *)ptr);
-	else if (deviceCb.displayType == SHOW_TEC_TEMP) ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)TecCurrent, (uint8_t *)ptr);
-	seg_dyn();
+	ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)value, (uint8_t *)ptr);
+	seg_dyn(ptr);
 }
 void curent_voltage_calc(void) {
 	uint8_t *ptr;
@@ -34,12 +25,6 @@ void curent_voltage_calc(void) {
 	LdVoltage = AdcValues[1] >> 5;
 	TecTemp = AdcValues[2] >> 5;
 	TecCurrent = AdcValues[3] >> 5;
-}
-void pid_curr(void) {
-	static uint8_t pid_timer=0;
-	static volatile int16_t PWM_calc=0;
-	pid_timer=st_millis();
-	//PWM_calc=pid_Controller((int16_t)EncoderValue, (int16_t)ADC_values[0], pid_reg_st);
 }
 void lcd_switch(void) {
 	static volatile uint8_t lcd_switch_timer=0; 
@@ -60,6 +45,7 @@ void lcd_switch(void) {
 int main(void)
 {
 	uint8_t encValue = 1, encButton = BUTTON_NO_PRESS;
+	adc_cb adcCurrentValues;
 	//volatile uint8_t *ptr;
 	//uint8_t noise_level_value=0;
 	//initiate ports
@@ -99,8 +85,60 @@ int main(void)
     {
 		encButton = encoder_button();
 		encValue = encoder_scan();
-		if (!encButton) change_display_output();
-
+		adcCurrentValues = get_adc_values();
+		deviceCb.currentLdI = adcCurrentValues.adcLdI;
+		deviceCb.currentLdV = adcCurrentValues.adcLdI;
+		if (deviceCb.currentLdI >= deviceCb.maxLdI) {
+			//deviceCb.setLdI = 0;
+			PWM_output = 0;
+			deviceCb.deviceState = LD_OVERCURRENT_ERROR;
+		}
+		if (deviceCb.currentLdV >= deviceCb.maxLdI) {
+			//deviceCb.setLdI = 0;
+			PWM_output = 0;
+			deviceCb.deviceState = LD_OVERVOLTAGE_ERROR;
+		}
+		deviceCb.setLdI = encValue; //convert encValue to something
+		switch (deviceCb.deviceState) {
+			case CONTROL_LD_CURRENT: {
+				deviceCb.setLdI = encValue; //convert encValue to something
+				deviceCb.currentLdI = adcCurrentValues.adcLdI;
+				pwm_value = pid_Controller((int16_t)deviceCb.setLdI, (int16_t)deviceCb.currentLdI, pid_reg_st);
+				pwm_output(pwm_value);
+				display();
+				break;
+			}
+			case SET_MAX_CURENT: {
+				while (!encoder_button()) {
+					deviceCb.maxLdI = encoder_scan();
+					display();
+				}
+				deviceCb.deviceState = CONTROL_LD_CURRENT;
+				break;
+			}
+			case SET_MAX_VOLTAGE: {
+				while (!encoder_button()) {
+					deviceCb.maxLdV = encoder_scan();
+					display();
+				}
+				deviceCb.deviceState = CONTROL_LD_CURRENT;
+				break;
+			}
+			case LD_OVERCURRENT_ERROR: {
+				//PWM_output = 0;
+				//overcurent_error_display
+				deviceCb.deviceState = SET_MAX_CURENT; 
+				while (!encoder_button()) ;
+				break;
+			}
+			case LD_OVERVOLTAGE_ERROR: {
+				//PWM_output = 0;
+				//overvolatge_error_display
+				deviceCb.deviceState = SET_MAX_VOLTAGE; 
+				while (!encoder_button()) ;
+				break;
+			}
+		}
 		wdt_reset(); //переодически сбрасываем собаку чтобы не улетететь в ресет
 	}
 }
