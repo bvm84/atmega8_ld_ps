@@ -1,8 +1,13 @@
 #include "board.h"
-
-uint16_t AdcValues[N_CHANNELS]={0,0,0,0}; //10 бит значения АЦП
+static adc_cb adcCb = {
+	.adcLdI =0,
+	.adcLdV = 0,
+	.adcTecTemp = 0,
+	.adcTecI = 0
+};
+static adcMutex = 0;
+static uint16_t AdcValues[N_CHANNELS]={0,0,0,0}; //10 бит значения АЦП
 static volatile uint8_t AdcCounter=0;
-uint16_t AveragedAdcValues[N_CHANNELS];
 ISR(ADC_vect) {
 	AdcValues[AdcCounter] = ADCW;
 	ADMUX |= 0b00001111; //все каналы АЦП сажаем на землю, перобразование окончено
@@ -13,6 +18,7 @@ ISR(ADC_vect) {
 	else {
 		AdcCounter = 0; //сбрасываем счетчик
 		ADMUX = (ADMUX &(~15));//подключаем нулевой канал АЦП
+		adcMutex = 0;
 	}
 	ADCSRA |= (_BV(6)); //так рабоатет в режиме фри  ранинг моде херня со смещением данных с каналов в массиве
 }
@@ -22,13 +28,10 @@ ISR(ADC_vect) {
 Табуляция значений 8-бит АЦП в тупую требует 256 байт флэша, второй вариант - тупо пересчет
 (математика, либо сдвиги, либо придумывать чнго)
 */
-PT_THREAD(Adc(struct pt *pt))
-{
-	static volatile uint8_t AdcTimer=0, AveragingCounter=0;
-	static volatile uint32_t AdcSums[N_CHANNELS] = {0, 0, 0, 0}; 
+adc_cb get_adc_values(void) {
+	uint8_t AveragingCounter=0;
+	uint32_t AdcSums[N_CHANNELS] = {0, 0, 0, 0}; 
 	//volatile uint8_t *ptr;
-	PT_BEGIN(pt);
-	PT_WAIT_UNTIL(pt,(st_millis() - AdcTimer) >= 10);
     //инициализация АЦП
 	ADMUX = 0b11100000; //опорное напряжение от внутреннего ИОН (2,56V), присоединить АЦП к входу ADC0;
 	ADCSRA = 0b00001111; //резрешить прерывание от АЦП, Установить делитель частоты 128
@@ -39,18 +42,19 @@ PT_THREAD(Adc(struct pt *pt))
 	sleep_disable();
 	//этот кусок вроде как повышает стабильность АЦП, но с ним начинаются пропуски импульсов ШИМ
 	*/
-	ADCSRA |= (_BV(7))|(_BV(6));//заупск преобразования АЦП
-	if (AveragingCounter < 32) {
+	while(AveragingCounter < 32) {
+		adcMutex = 1; 
+		ADCSRA |= (_BV(7))|(_BV(6));//запуск преобразования АЦП
+		while(!adcMutex) ; //ждем окончания преобразования
+        for(uint8_t i=0; i<N_CHANNELS; i++) AdcSums[i] += AdcValues[i];
 		AveragingCounter++;
-        for(uint8_t i=0; i<N_CHANNELS; i++) AdcSums[i]+=AdcValues[i];
     }
-	else {
-		AveragingCounter = 0;
-        for(uint8_t i=0; i<N_CHANNELS; i++) AveragedAdcValues[i] += AdcSums[i]>>5;
-		for(uint8_t i=0; i<N_CHANNELS; i++) AdcSums[i] = 0;
-		}
-	AdcTimer = st_millis();
-	PT_END(pt);
+	adcCb.adcLdI = AdcSums[0]>>5;
+	adcCb.adcLdV = AdcSums[1]>>5;
+	adcCb.adcTecTemp = AdcSums[2]>>5;
+	adcCb.adcTecI = AdcSums[3]>>5;
+	for(uint8_t i=0; i<N_CHANNELS; i++) AdcSums[i] = 0;
+	return adcCb;
 }
 /* функция инициализации АЦП и нахождения уровня шума, передумал делать, может в будущем пригодится
 

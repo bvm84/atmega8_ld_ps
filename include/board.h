@@ -2,8 +2,6 @@
 #define __BOARD_H__
 #include <avr/io.h>
 #include <util/atomic.h>
-#include <pt-1.4/pt.h>
-#include <pt-1.4/pt-sem.h>
 #include <util/delay.h>
 #include <avr/wdt.h>
 #include <avr/sleep.h>
@@ -38,6 +36,20 @@
 #define SHOW_TEC_TEMP       2
 #define SHOW_TEC_CURERNT    3
 
+typedef struct device_cb {
+    uint8_t displayType;
+    uint16_t setLdI;
+    uint16_t currentLdI;
+	uint16_t setTecTemp;
+	uint16_t currentTecTemp;
+	uint16_t currentLdV;
+	uint16_t currentTecI;
+    uint16_t maxLdI;
+    uint16_t thrLdI;
+    uint16_t maxTemp;
+    uint16_t maxLdV;
+    uint16_t maxTecI;
+} device_cb;
 
 uint32_t st_millis(void);
 ISR(TIMER0_OVF_vect); 

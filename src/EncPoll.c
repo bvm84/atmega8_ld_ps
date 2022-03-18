@@ -11,8 +11,7 @@
 
  */ 
 #include "board.h"
-uint8_t EncoderValue;
-struct pt_sem button_sem;
+static uint8_t EncoderValue = 1;
 //extern struct pt_sem button_sem;
 //extern uint8_t EncoderValue;
 // uint8_t ButtonState=BUTTON_ADC;
@@ -30,12 +29,7 @@ const int8_t EncState[] PROGMEM =
 	else ButtonState=BUTTON_ON;
 }
 */
-
-PT_THREAD(EncoderScan(struct pt *pt))
-{
-	PT_BEGIN(pt);
-	PT_WAIT_UNTIL(pt, (PIN(ENCPOLL_PORT) & (1<<ENCPOLL_A_PIN)) ||(PIN(ENCPOLL_PORT) & (1<<ENCPOLL_B_PIN)));
-	//Поток не запустится пока не сработает энкодер
+uint8_t encoder_scan(void) {
 	uint8_t Enc=0;
 	Enc += ((PIN(ENCPOLL_PORT) & ((1<<ENCPOLL_A_PIN)|(1<<ENCPOLL_B_PIN)))>>3);
 	EncoderValue -= pgm_read_byte(&(EncState[Enc]));
@@ -43,25 +37,20 @@ PT_THREAD(EncoderScan(struct pt *pt))
 	Enc &= 0b00001111;
 	if (EncoderValue < 1) EncoderValue = 1;
 	if (EncoderValue > 254) EncoderValue = 254; //600 = 6A current
-	PT_END(pt);
+	return EncoderValue;
 }
-PT_THREAD(EncoderButton(struct pt *pt)) {
+uint8_t encoder_button(void) {
 	static uint16_t val=0;
-	PT_BEGIN(pt);
-	PT_WAIT_UNTIL(pt, ((PIN(ENCBUT_PORT)&(_BV(ENCBUT_PIN))))); //поток не запустится пока не будет зфиксировано нажатие
 	while (((PIN(ENCBUT_PORT)&(_BV(ENCBUT_PIN)))==0)&&(val<=1000)) {
 		val++;
 	}
 	if (val>900) {
-		//ButtonState=BUTTON_LONG_ON; - это сейчас не нужно, вдруг пригодится обрабатывать долгие нажатия
-		PT_SEM_SIGNAL(pt, &button_sem);
-		PT_SEM_SIGNAL(pt, &button_sem);
+		return BUTTON_LONG_PRESS;
 	}
 	else if (val>=5) {
-		PT_SEM_SIGNAL(pt, &button_sem);
+		return BUTTON_SHORT_PRESS;
 	}
-	val=0;
-	PT_END(pt);
+	else return BUTTON_NO_PRESS;
 }
 
 /* проверить состояние кнопки

@@ -5,7 +5,13 @@
 #define N_CHANNELS 4
 #define ADC_MAX 1024
 
-//extern uint16_t AdcValues[N_CHANNELS]={0,0,0,0}; //10 бит значения АЦП
-PT_THREAD(Adc(struct pt *pt));
+typedef struct adc_cb {
+	uint16_t adcLdI;
+    uint16_t adcLdV;
+	uint16_t adcTecTemp;
+    uint16_t adcTecI;
+} adc_cb;
+
+adc_cb get_adc_values(void);
 
 #endif

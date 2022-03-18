@@ -13,12 +13,14 @@
 #define BUTTON_ADC 0
 #define BUTTON_ENC 1
 #define BUTTON_PID 2
-#define BOUNCE 3
-#define BUTTON_LONG_ON 2
+#define BOUNCE 3.
+#define BUTTON_NO_PRESS 0
+#define BUTTON_SHORT_PRESS 1
+#define BUTTON_LONG_PRESS 2
 #define BUT_MASK 16
 
-PT_THREAD(EncoderScan(struct pt *pt));
-PT_THREAD(EncoderButton(struct pt *pt));
+uint8_t encoder_scan(void);
+uint8_t encoder_button(void)
 
 
 
