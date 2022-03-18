@@ -1,62 +1,48 @@
 #include "board.h"
 extern uint8_t SCR_D[SCR_SIZE];
-extern uint16_t AdcValues[N_CHANNELS]; //10 бит значения АЦП
-static volatile uint8_t PWM_value=0; 
-static struct PID_DATA *pid_reg_st; //структура ПИД
-static struct pt_sem display_sem;
-//extern struct pt_sem button_sem;
-extern struct pt_sem button_sem;
-extern uint8_t EncoderValue;
-volatile uint16_t LdCurrent;
-volatile uint16_t LdVoltage;
-volatile uint16_t TecTemp;
-volatile uint16_t TecCurrent;
-//Указатели на структуру протопотоков
-static struct pt EncoderScan_pt; //сканирует поворот ручки экнкодер
-static struct pt CurrentCalc_pt; //вычисляет ток через ЛД
-static struct pt EncoderButton_pt; //сканирует кнопку энкодера
-static struct pt PidCurr_pt; //PID, выдает значение ШИМ
-static struct pt Adc_pt; //Получает данные от АЦП
-static struct pt DisplayOut_pt; //переключает отображаемый параметр на семисегнтнике
 extern uint16_t LdCurrent;
 extern uint16_t LdVoltage;
 extern uint16_t TecTemp;
 extern uint16_t TecCurrent;
-uint8_t ValueToShow = SHOW_LD_CURRENT;
-
-PT_THREAD(DisplayOut(struct pt *pt)) {
-	PT_BEGIN(pt);
+static volatile uint8_t PWM_value=0; 
+static struct PID_DATA *pid_reg_st; //структура ПИД
+static device_cb deviceCb = {
+	.displayType = SHOW_LD_CURRENT,
+	.setLdI = 0,
+	.currentLdI = 0,
+	.setTecTemp = 25,
+	.currentTecTemp = 0,
+	.currentLdV = 0,
+	.currentTecI = 0,
+	.maxLdI = 1024,
+	.thrLdI = 100,
+    .maxTemp = 50,
+	.maxLdV = 2,
+    .maxTecI = 5
+};
+void display_out(void) {
 	uint8_t *ptr = &SCR_D[0];
-	if (ValueToShow == SHOW_LD_CURRENT) ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)LdCurrent, (uint8_t *)ptr);
-	else if (ValueToShow == SHOW_LD_VOLTAGE) ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)LdVoltage, (uint8_t *)ptr);
-	else if (ValueToShow == SHOW_TEC_TEMP) ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)TecTemp, (uint8_t *)ptr);
-	else if (ValueToShow == SHOW_TEC_TEMP) ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)TecCurrent, (uint8_t *)ptr);
+	if (deviceCb.displayType == SHOW_LD_CURRENT) ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)LdCurrent, (uint8_t *)ptr);
+	else if (deviceCb.displayType == SHOW_LD_VOLTAGE) ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)LdVoltage, (uint8_t *)ptr);
+	else if (deviceCb.displayType == SHOW_TEC_TEMP) ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)TecTemp, (uint8_t *)ptr);
+	else if (deviceCb.displayType == SHOW_TEC_TEMP) ptr = (volatile uint8_t *)utoa_fast_div((uint32_t)TecCurrent, (uint8_t *)ptr);
 	seg_dyn();
-	PT_END(pt);
 }
-PT_THREAD(CurentVoltageCalc(struct pt *pt)) {
-	PT_BEGIN(pt);
+void curent_voltage_calc(void) {
 	uint8_t *ptr;
 	LdCurrent = AdcValues[0] >> 3;
 	LdVoltage = AdcValues[1] >> 5;
 	TecTemp = AdcValues[2] >> 5;
 	TecCurrent = AdcValues[3] >> 5;
-	PT_SPAWN(DisplayOut_pt);
-	PT_END(pt);
 }
-PT_THREAD(PidCurr(struct pt *pt)) {
+void pid_curr(void) {
 	static uint8_t pid_timer=0;
 	static volatile int16_t PWM_calc=0;
-	PT_BEGIN(pt);
-	PT_WAIT_UNTIL(pt, (st_millis()-pid_timer)>=20);
 	pid_timer=st_millis();
 	//PWM_calc=pid_Controller((int16_t)EncoderValue, (int16_t)ADC_values[0], pid_reg_st);
-	PT_END(pt);		
 }
-PT_THREAD(LcdSwitch(struct pt *pt)) {
+void lcd_switch(void) {
 	static volatile uint8_t lcd_switch_timer=0; 
-	PT_BEGIN(pt);
-	PT_WAIT_UNTIL(pt,(st_millis()-lcd_switch_timer)>=100);
 	/*
 	pid_value=pid_Controller((int16_t)EncoderValue, (int16_t)ADC0_value, pid_reg_st);
 	if (ButtonState==BUTTON_ADC) ptr=(volatile uint8_t *)utoa_fast_div((uint32_t)ADC0_value, (uint8_t *)ptr); //включить dot
@@ -70,10 +56,10 @@ PT_THREAD(LcdSwitch(struct pt *pt)) {
 	иначе ПИД со временем улетит в оверфлоу
 	*/
 	lcd_switch_timer=st_millis();
-	PT_END(pt);
 }
 int main(void)
 {
+	uint8_t encValue = 1, encButton = BUTTON_NO_PRESS;
 	//volatile uint8_t *ptr;
 	//uint8_t noise_level_value=0;
 	//initiate ports
@@ -101,22 +87,9 @@ int main(void)
 	TIMSK |= _BV(TOIE0) | _BV(OCIE1A);
 
 	//noise_level_value=ADC_init();
-	pid_Init(P_FACTOR,I_FACTOR,D_FACTOR, pid_reg_st);
-		
-	PT_INIT(&SegDyn_pt);
-	PT_INIT(&EncoderButton_pt);
-	PT_INIT(&EncoderScan_pt);
-	PT_INIT(&Adc_pt);
-	PT_INIT(&LcdSwitch_pt);
-	PT_SEM_INIT(&display_sem, 0); //отображаем ток по умолчанию
-	PT_SEM_INIT(&button_sem, 0); //отображаем ток по умолчанию
-	EncoderValue = 1;
-	//PT_INIT(&CurrentCalc_pt);
-	//PT_INIT(&PID_LD_CURR_pt);
-	
+	pid_Init(P_FACTOR, I_FACTOR, D_FACTOR, pid_reg_st);
 	wdt_reset(); //сбрасываем собаку на всякий пожарный
 	wdt_enable(WDTO_2S); //запускаем собаку с перидом 2с
-	
 	sei();
 	//ADCSRA|=(_BV(7))|(_BV(6)); //запускаем АЦП в одиночном режиме, перезапуск в обработчике прерывания
 	//ADCSRA|=(_BV(7));
@@ -124,11 +97,10 @@ int main(void)
 	//UCSRB|=(1<<UDRIE);	// Разрешаем прерывание UDRE
     while(1)
     {
-		SegDyn(&SegDyn_pt);
-		EncoderButton(&EncoderButton_pt);
-		EncoderScan(&EncoderScan_pt);
-		Adc(&Adc_pt);
-		LcdSwitch(&LcdSwitch_pt);
+		encButton = encoder_button();
+		encValue = encoder_scan();
+		if (!encButton) change_display_output();
+
 		wdt_reset(); //переодически сбрасываем собаку чтобы не улетететь в ресет
-	 }
+	}
 }
